@@ -61,7 +61,7 @@ struct Reparaciones
 
 struct datosFactura
 {
-    int numeroFactura
+    int numeroFactura;
     char CI_cliente[10];
     Fecha fecha_emision_factura;
     int metodo_pago;
@@ -73,4 +73,5 @@ int main()
 {
 
     return 0;
+
 }
