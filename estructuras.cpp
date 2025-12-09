@@ -1,5 +1,4 @@
 #include <iostream>
-#include <fstream>
 
 using namespace std;
 
@@ -46,7 +45,9 @@ struct ventaProducto
     Fecha fechaDeVenta;
     int cantidad;
     float precioUnitario;
-    bool eliminado;
+    bool eliminada;
+    bool facturada;
+    int numeroFactura;
 };
 
 struct Reparaciones
@@ -65,15 +66,5 @@ struct datosFactura
     char CI_cliente[10];
     Fecha fecha_emision_factura;
     int metodo_pago;
+    bool anulada;
 };
-
-
-
-int main()
-{
-
-    return 0;
-
-}
-
-
