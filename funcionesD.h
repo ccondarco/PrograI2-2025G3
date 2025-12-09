@@ -73,13 +73,6 @@ struct datosFactura
 };
 
 
-// IBM DE PRODUCTO
-
-void IBMDatosProducto() {
-    int opcion;
-
-
-}
 
 void categoriasProductoMenu() { // consultar ^w^ y realizar un vector acorde
     cout << "\tCATEGORÍAS\n";
@@ -417,5 +410,6 @@ void menuABM_Reparacion(string nombreArchivoBin) {
             cout << "Volviendo al menú principal...\n";
         }
     } while (opcion!=0);
+
 
 }
