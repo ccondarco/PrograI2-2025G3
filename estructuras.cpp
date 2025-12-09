@@ -47,6 +47,7 @@ struct ventaProducto
     Fecha fechaDeVenta;
     int cantidad;
     float precioUnitario;
+    bool eliminado;
 };
 
 struct Reparaciones
@@ -75,3 +76,4 @@ int main()
     return 0;
 
 }
+
