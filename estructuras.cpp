@@ -40,7 +40,6 @@ struct DatosProducto
 
 struct ventaProducto
 {
-    int numeroFactura;
     int codigoProducto;
     char CI_Cliente[10];
     char CI_Empleado[10];
@@ -76,4 +75,5 @@ int main()
     return 0;
 
 }
+
 
