@@ -7,6 +7,7 @@
 using namespace std;
 
 vector<string> meses = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
+vector<string> categoriasProductoVector = {"Celular", "Tablet", "Television", "Licuadora", "Microondas"};
 
 struct Fecha
 {
@@ -72,8 +73,6 @@ struct datosFactura
     int metodo_pago;
 };
 
-
-
 void categoriasProductoMenu() { // consultar ^w^ y realizar un vector acorde
     cout << "\tCATEGORÍAS\n";
     cout << "\t\t1.Celular\n";
@@ -94,6 +93,7 @@ DatosProducto insertarDatosProducto() {
     cout << "Categoría: ";
     categoriasProductoMenu();
     cin >> producto.categoria;
+    producto.categoria -= 1; // Rebajar en un número la categoría para que sea acorde al vector
     cout << "Precio de venta: ";
     cin >> producto.precioVenta;
     cout << "Stock: ";
@@ -117,6 +117,32 @@ void agregarProducto (string nombreArchivo) {
     archivo.close();
 }
 
+void mostrarListaProductosPantalla(string nombreArhcivo) {
+    ifstream archivo;
+    DatosProducto producto;
+    system("cls");
+
+    archivo.open(nombreArhcivo, ios::binary);
+    if (archivo.good()) {
+        cout << "============ LISTA DE PRODUCTOS DISPONIBLES ===================\n";
+        while(archivo.read((char*)(&producto), sizeof(DatosProducto)) && producto.eliminado==false) {
+            cout << "\tCódigo: " << producto.codigo << endl;
+            cout << "\tModelo: " << producto.modelo << endl;
+            cout << "\tCategoría: " << categoriasProductoVector[producto.categoria] << endl;
+            cout << "\tPrecio de venta: " << producto.precioVenta << endl;
+            cout << "\tStock: " << producto.stock << endl;
+            cout << "--------------------------------------------------------\n";
+        }
+        archivo.close();
+        system("pause");
+
+    } else {
+        cout << "Error al abrir el archivo de productos\n";
+        system("pause");
+        return;
+    }
+}
+
 void ModificarProducto(string nombreArchivo) { // Es posible que se deba hacer más fucniones para modificar una parte específica y no así todos los datos
     fstream archivo; // leer y modificar
     DatosProducto producto;
@@ -137,6 +163,7 @@ void ModificarProducto(string nombreArchivo) { // Es posible que se deba hacer m
                 cout << "\tCódigo: " << producto.codigo << endl;
                 cout << "\tModelo: " << producto.modelo << endl;
                 cout << "\tCategoría: " << producto.categoria << endl;
+                producto.categoria -= 1;
                 cout << "\tPrecio de venta: " << producto.precioVenta << endl;
                 cout << "\tStock: " << producto.stock << endl;
                 encontrado = true;
@@ -145,6 +172,7 @@ void ModificarProducto(string nombreArchivo) { // Es posible que se deba hacer m
                 cin >> confirmacion;
                 if (confirmacion == 's') {
                     archivo.seekp(-sizeof(DatosProducto), ios::cur);
+                    cin.ignore();
                     cout << "NUEVOS DATOS DEL PRODUCTO\n";
                     cout << "Modelo: ";
                     cin.getline(producto.modelo, 30);
@@ -213,6 +241,36 @@ void eliminarProducto(string nombreArchivo) {
         cout << "Error al eliminar producto\n";
     }
     archivo.close();
+}
+
+void menuABM_Productos(string nombreArchivoBin) {
+    int opcion;
+    do {
+        system("cls");
+        cout << "== MENÚ PRODUCTOS ==\n";
+        cout << "\t1. Agregar producto\n";
+        cout << "\t2. Modificar producto\n";
+        cout << "\t3. Eliminar producto\n";
+        cout << "\t4. Mostrar lista de productos disponibles\n";
+        // cout << "\t4. Reporte Mensual de Reapraciones\n";
+        // cout << "\t5. Mostrar producto más veces reparado\n";
+        cout << "\t0. Volver\n";
+        cout << "--> ";
+        cin >> opcion;
+        if (opcion==1) {
+            agregarProducto(nombreArchivoBin);
+        } else if (opcion==2) {
+            ModificarProducto(nombreArchivoBin);
+        } else if (opcion==3) {
+            eliminarProducto(nombreArchivoBin);
+        } else if(opcion==4) {
+            mostrarListaProductosPantalla(nombreArchivoBin);
+        } else if (opcion==5) {
+
+        } else if (opcion==0) {
+            cout << "Volviendo al menú principal...\n";
+        }
+    } while (opcion!=0);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -410,6 +468,5 @@ void menuABM_Reparacion(string nombreArchivoBin) {
             cout << "Volviendo al menú principal...\n";
         }
     } while (opcion!=0);
-
 
 }
