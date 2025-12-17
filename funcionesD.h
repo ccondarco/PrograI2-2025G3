@@ -7,7 +7,9 @@
 using namespace std;
 
 vector<string> meses = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
-vector<string> categoriasProductoVector = {"Celular", "Tablet", "Television", "Licuadora", "Microondas"};
+vector<string> categoriasProductoVector = {"Celular", "Tablet", "Laptop", "Televisor", "Monitor", "Parlante", "Proyector", "Lavadora", "Refrigerador"};
+vector<int> diasMeses = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+vector<int> diasMesesBisiesto = {0,31,28,31,30,31,30,31,31,30,31,30,31}; // se daj el primer componente como 0 para que vaya de acuerdo a los meses
 
 struct Fecha
 {
@@ -18,7 +20,7 @@ struct Fecha
 
 struct DatosCliente
 {
-    char CI_Cliente[30];
+    char CI_Cliente[10];
     char nombre[30];
     char apellido[30];
     Fecha fechaNacimiento;
@@ -46,13 +48,15 @@ struct DatosProducto
 
 struct ventaProducto
 {
-    int numeroFactura;
-    int codigoProducto;
     char CI_Cliente[10];
     char CI_Empleado[10];
     Fecha fechaDeVenta;
+    int codigoProducto;
     int cantidad;
     float precioUnitario;
+    bool eliminada;
+    bool facturada;
+    int numeroFactura;
 };
 
 struct Reparaciones
@@ -71,15 +75,20 @@ struct datosFactura
     char CI_cliente[10];
     Fecha fecha_emision_factura;
     int metodo_pago;
+    bool anulada;
 };
 
-void categoriasProductoMenu() { // consultar ^w^ y realizar un vector acorde
+void categoriasProductoMenu() {
     cout << "\tCATEGORÍAS\n";
-    cout << "\t\t1.Celular\n";
+    cout << "\t\t1. Celular\n";
     cout << "\t\t2. Tablet\n";
-    cout << "\t\t3. Televisión\n";
-    cout << "\t\t4. Licuadora\n";
-    cout << "\t\t5. Microondas\n";
+    cout << "\t\t3. Laptop\n";
+    cout << "\t\t4. Televisor\n";
+    cout << "\t\t5. Monitor\n";
+    cout << "\t\t6. Parlante\n";
+    cout << "\t\t7. Proyector\n";
+    cout << "\t\t8. Lavadora\n";
+    cout << "\t\t9. Refrigerador\n";
 }
 
 DatosProducto insertarDatosProducto() {
@@ -243,6 +252,69 @@ void eliminarProducto(string nombreArchivo) {
     archivo.close();
 }
 
+void buscarProductoPorCodigo(string nombreArchivo) {
+    ifstream archivo;
+    DatosProducto producto;
+    bool encontrado = false;
+    int codigoBuscado;
+
+    cout << "Ingrese el código del producto que busca: ";
+    cin >> codigoBuscado;
+
+    archivo.open(nombreArchivo, ios::binary);
+    if (archivo.good()) {
+        while (archivo.read((char*)(&producto), sizeof(DatosProducto)) && encontrado==false) {
+            if (producto.codigo == codigoBuscado && producto.eliminado==false) {
+                cout << "== PRODUCTO ENCONTRADO ==\n";
+                cout << "Código: " << producto.codigo << endl;
+                cout << "Modelo: " << producto.modelo << endl;
+                cout << "Categoría: " << producto.categoria << endl;
+                cout << "Precio: " << producto.precioVenta << endl;
+                cout << "Stock: " << producto.stock << endl;
+                cout << "=========================\n";
+                encontrado = true;
+            }
+        }
+        if (encontrado==false) {
+            cout << "No se pudo encontrar un producto con ese código: ";
+            system("pause");
+            return;
+        }
+        system("pause");
+        archivo.close();
+    } else {
+        cout << "Error al buscar el producto\n";
+        system("pause");
+        return;
+    }
+}
+
+void productosBajoStock(string nombreArchivo) {
+    ifstream archivo;
+    DatosProducto producto;
+
+    archivo.open(nombreArchivo, ios::binary);
+    if (archivo.good()) {
+        cout << "====== PRODUCTOS DE BAJO STOCK ======\n";
+        while (archivo.read((char*)(&producto), sizeof(DatosProducto))) {
+            if (producto.stock<5) {
+                cout << "Código: " << producto.codigo << endl;
+                cout << "Modelo: " << producto.modelo << endl;
+                cout << "Categoría: " << producto.categoria << endl;
+                cout << "Precio: " << producto.precioVenta << endl;
+                cout << "Stock: " << producto.stock << endl;
+                cout << "=========================\n";
+            }
+        }
+        system("pause");
+        archivo.close();
+    } else {
+        cout << "Error al buscar productos\n";
+        system("pause");
+        return;
+    }
+}
+
 void menuABM_Productos(string nombreArchivoBin) {
     int opcion;
     do {
@@ -252,8 +324,8 @@ void menuABM_Productos(string nombreArchivoBin) {
         cout << "\t2. Modificar producto\n";
         cout << "\t3. Eliminar producto\n";
         cout << "\t4. Mostrar lista de productos disponibles\n";
-        // cout << "\t4. Reporte Mensual de Reapraciones\n";
-        // cout << "\t5. Mostrar producto más veces reparado\n";
+        cout << "\t5. Buscar producto por código\n";
+        cout << "\t6. Reporte: productos con bajo stock (menos de 5 unidades)\n";
         cout << "\t0. Volver\n";
         cout << "--> ";
         cin >> opcion;
@@ -266,8 +338,10 @@ void menuABM_Productos(string nombreArchivoBin) {
         } else if(opcion==4) {
             mostrarListaProductosPantalla(nombreArchivoBin);
         } else if (opcion==5) {
-
-        } else if (opcion==0) {
+            buscarProductoPorCodigo(nombreArchivoBin);
+        } else if (opcion==6) {
+            productosBajoStock(nombreArchivoBin);
+        }else if (opcion==0) {
             cout << "Volviendo al menú principal...\n";
         }
     } while (opcion!=0);
@@ -275,16 +349,65 @@ void menuABM_Productos(string nombreArchivoBin) {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-Reparaciones DatosReparacion() {
+Fecha encontrarFechaFactura (string nombreArchivoFacturas, int numeroFacturaBuscado) {
+    ifstream archivoFacturas;
+    datosFactura factura;
+    bool encontrado = false;
+    Fecha fechaADevolver;
+
+    archivoFacturas.open(nombreArchivoFacturas, ios::binary);
+    if (archivoFacturas.good()) {
+        while(archivoFacturas.read((char*)(&factura), sizeof(datosFactura)) && encontrado==false) {
+            if (factura.numeroFactura==numeroFacturaBuscado && factura.anulada==false) {
+                fechaADevolver = factura.fecha_emision_factura;
+                encontrado = true;
+            }
+        }
+        if (encontrado==false) {
+            cout << "No se pudo encontrar la factura de la compra. No se puede ofrecer ningún descuento.\n";
+            system("pause");
+        }
+        archivoFacturas.close();
+    } else {
+        cout << "Error al abrir el archivo de facturas\n";
+        system("pause");
+    }
+    return fechaADevolver;
+}
+
+bool anioEsBisiesto(int anio) {
+    if (anio%4==0) {
+        if (anio%100==0) {
+            if (anio%400==0) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+Reparaciones DatosReparacion(char ciClient[], int codigoProd, int numFactura, string nombreArchivoFacturas) {
     Reparaciones reparacion;
     Fecha datosFechaTemporal;
+    Fecha fechaFactura;
+    ifstream archivoFacturas;
+    datosFactura factura;
+    bool anioBisiesto;
+    int diasDeDiferenciaEntreFechas;
 
-    cout << "CI del cliente: ";
-    cin >> reparacion.CI_cliente;
-    cout << "Código del producto: ";
-    cin >> reparacion.codigoProducto;
-    cin.ignore();
-    cout << "Descripción de los daños(100 caracteres): ";
+    //cout << "CI del cliente: ";
+    //cin >> reparacion.CI_cliente;
+    strcpy(reparacion.CI_cliente,ciClient);
+    //cout << "Código del producto: ";
+    //cin >> reparacion.codigoProducto;
+    reparacion.codigoProducto = codigoProd;
+    reparacion.numeroFactura = numFactura;
+    cout << "Descripción de los daños(99 caracteres): ";
     cin.getline(reparacion.descripcion, 100);
     cout << "Fecha: \n";
     cout << "\tDía: ";
@@ -294,21 +417,110 @@ Reparaciones DatosReparacion() {
     cout << "\tAño: ";
     cin >> datosFechaTemporal.anio;
     reparacion.fechaReparacion = datosFechaTemporal;
-    cout << "Precio de venta: "; // 1 anio de garantia
-    cin >> reparacion.codigoProducto;
-   
+
+    fechaFactura = encontrarFechaFactura(nombreArchivoFacturas, numFactura);
+    // sumar años incompletos
+    for (int i=fechaFactura.mes; i<13; i++) {
+        if (anioEsBisiesto(fechaFactura.anio) && fechaFactura.mes<=2) {
+            diasDeDiferenciaEntreFechas += diasMeses[i];
+        } else {
+            diasDeDiferenciaEntreFechas += diasMeses[i];
+        }
+    }
+    // sumar años completos
+    for (int i=fechaFactura.anio+1; i<reparacion.fechaReparacion.anio; i++) {
+        if (anioEsBisiesto(i)) {
+            diasDeDiferenciaEntreFechas += 366;
+        } else {
+            diasDeDiferenciaEntreFechas += 365;
+        }
+    }
+    if (diasDeDiferenciaEntreFechas > 365) {
+        cout << "La garantía ha expirado\nIntroduzca el precio de la reparación: ";
+        cin >> reparacion.precioReparacion;
+    } else {
+        cout << "La garantía continúa vigente, la repración no tendrá costo\n";
+        reparacion.precioReparacion = 0;
+    }
+
     return reparacion;
 }
 
-void agregarDatosReparacion(string nombreArchivo) {
-    ofstream archivo;
+void agregarDatosReparacion(string nombreArchivoReparacion, string nombreArchivoFacturas, string NombreArchivoCliente, string nombreArchivoProductos) {
+    ofstream archivoReparacion;
+    ifstream archivoClientes;
+    ifstream archivoFacturas;
+    ifstream archivoProductos;
     Reparaciones repararacion;
+    DatosCliente cliente;
+    datosFactura factura;
+    DatosProducto producto;
+    char CIClienteBuscado[10];
+    bool encontradoCliente=false;
+    int numFacturaBuscada;
+    bool encontradoFactura=false;
+    int codigoProductoBuscado;
+    bool encontradoCodigo=false;
 
-    archivo.open(nombreArchivo, ios::binary | ios::app);
-    if (archivo.good()) {
-        repararacion = DatosReparacion();
-        archivo.write((char*)(&repararacion), sizeof(Reparaciones));
-        archivo.close();
+    cout << "DATOS DE REPARACIÓN\n";
+    archivoClientes.open(NombreArchivoCliente, ios::binary);
+    if (archivoClientes.good()) {
+        cin.ignore();
+        cout << "CI del Cliente: ";
+        cin.getline(CIClienteBuscado,10);
+        while (archivoClientes.read((char*)(&cliente), sizeof(DatosCliente)) && encontradoCliente==false) {
+            if (strcmp(cliente.CI_Cliente,CIClienteBuscado)==0) {
+                encontradoCliente == true;
+            }
+        }
+        if (encontradoCliente==false) {
+            cout << "No se ha encontrado a un cliente con ese CI\n";
+            return;
+        }
+    } else {
+        cout << "Error al abrir el archivo de clientes\n";
+        return;
+    }
+    archivoFacturas.open(nombreArchivoFacturas, ios::binary);
+    if (archivoFacturas.good()) {
+        cout << "Número de Factura: ";
+        cin >> numFacturaBuscada;
+        while (archivoFacturas.read((char*)(&factura), sizeof(datosFactura)) && encontradoFactura==false) {
+            if (numFacturaBuscada==factura.numeroFactura && factura.anulada==false) {
+                encontradoFactura == true;
+            }
+        }
+        if (encontradoFactura==false) {
+            cout << "No se ha encontrado la factura\n";
+            return;
+        }
+    } else {
+        cout << "Error al abrir el archivo de facturas\n";
+        return;
+    }
+    archivoProductos.open(nombreArchivoProductos, ios::binary);
+    if (archivoProductos.good()) {
+        cout << "Código del Producto: ";
+        cin >> codigoProductoBuscado;
+        while (archivoProductos.read((char*)(&producto), sizeof(DatosProducto)) && encontradoCodigo==false) {
+            if (codigoProductoBuscado==producto.codigo) {
+                encontradoCodigo = true;
+            }
+        }
+        if (encontradoCodigo==false) {
+            cout << "El producto no está disponible\n";
+            return;
+        }
+    } else {
+        cout << "Error al abrir el archivo de productos\n";
+        return;
+    }
+
+    archivoReparacion.open(nombreArchivoReparacion, ios::binary | ios::app);
+    if (archivoReparacion.good()) {
+        repararacion = DatosReparacion(CIClienteBuscado,codigoProductoBuscado,numFacturaBuscada,nombreArchivoFacturas);
+        archivoReparacion.write((char*)(&repararacion), sizeof(Reparaciones));
+        archivoReparacion.close();
         cout << "Datos de la reparación agregados con éxito.";
         system("pause");
     } else {
@@ -410,31 +622,81 @@ void modificarDatosReparacion(string nombreArchivo) {
 }
 
 //--------Reportes Reparaciones--------------
-void imprimirReporteMensualReparaciones (string nombreArchivoBin, string nombreArchivoTxt) {
-    ofstream archivoTexto; //escribir
-    ifstream archivoBin; //leer
+void ReporteMensualReparacionesPantalla (string nombreArchivoBinReparaciones, string nombreArchivoBinClientes, string nombreArchivoBinFacturas, string nombreArchivoBinProductos) {
+    ifstream archivoBinRepararaciones; //leer
+    ifstream archivoBinClientes;
+    ifstream archivoBinFacturas;
+    ifstream archivoBinProductos;
     Reparaciones reparacion;
+    DatosCliente cliente;
+    datosFactura factura;
+    DatosProducto producto;
     int mesBuscado;
     int anioBuscado;
 
-    archivoBin.open(nombreArchivoBin, ios::binary);
-    archivoTexto.open(nombreArchivoTxt, ios::app);
-    if (archivoBin.good() && archivoTexto.good()) {
+    archivoBinRepararaciones.open(nombreArchivoBinReparaciones, ios::binary);
+    if (archivoBinRepararaciones.good()) {
         cout << "REPORTE MENSUAL DE REPARACIONES\n";
         cout << "Mes del reporte: ";
         cin >> mesBuscado;
         cout << "Año del reporte: ";
         cin >> anioBuscado;
-        archivoTexto << "===== REPARACIONES DEL MES DE " << meses[mesBuscado-1] << " DE " << anioBuscado << " =====\n";    
-        while(archivoBin.read((char*)(&reparacion), sizeof(Reparaciones))) {
+        cout << "===== REPARACIONES DEL MES DE " << meses[mesBuscado-1] << " DE " << anioBuscado << " =====\n";    
+        while(archivoBinRepararaciones.read((char*)(&reparacion), sizeof(Reparaciones))) {
             if (reparacion.fechaReparacion.mes==mesBuscado && reparacion.fechaReparacion.anio==anioBuscado) {
-                archivoTexto << "--------------------------------------------------\n";
-                archivoTexto << "Fecha: " << reparacion.fechaReparacion.dia << "/" << reparacion.fechaReparacion.mes << "/" << reparacion.fechaReparacion.anio << endl;
-                archivoTexto << "DATOS DEL CLIENTE\n";
-                archivoTexto << "CI: " << reparacion.CI_cliente; // buscar los datos del cliente en otro archivo
-                archivoTexto << "DATOS DEL PRODUCTO\n";
-                archivoTexto << reparacion.codigoProducto; // buscar con el codigo del producto;
+                cout << "--------------------------------------------------\n";
+                cout << "Fecha: " << reparacion.fechaReparacion.dia << "/" << reparacion.fechaReparacion.mes << "/" << reparacion.fechaReparacion.anio << endl;
+                archivoBinClientes.open(nombreArchivoBinClientes, ios::binary);
+                if (archivoBinClientes.good()) {
+                    cout << "DATOS DEL CLIENTE\n";
+                    cout << "CI: " << reparacion.CI_cliente;
+                    while(archivoBinClientes.read((char*)(&cliente), sizeof(DatosCliente))) {
+                        if (strcmp(reparacion.CI_cliente,cliente.CI_Cliente)==0) {
+                            cout << "Nombres y Apellidos: " << cliente.nombre << " " << cliente.apellido << endl;
+                            cout << "Tel. y Correo: " << cliente.telefono << " / " << cliente.correo << endl;
+                            // PONER  SI ESTÁ ELIMINADO EL CLIENTE O NO
+                        }
+                    }
+                } else {
+                    cout << "No se pudo abrir el archivo de clientes\n";
+                    return;
+                }
+                archivoBinClientes.close();
 
+                archivoBinProductos.open(nombreArchivoBinProductos, ios::binary);
+                if (archivoBinProductos.good()) {
+                    cout << "DATOS DEL PRODUCTO\n";
+                    cout << "Código: "  << reparacion.codigoProducto << endl;
+                    while (archivoBinProductos.read((char*)(&producto), sizeof(DatosProducto))) {
+                        if (reparacion.codigoProducto==producto.codigo) {
+                            cout << "Modelo y categoría: " << producto.modelo << ", " << categoriasProductoVector[producto.categoria] << endl;
+                            cout << "Precio de Venta: " << producto.precioVenta << endl;
+                            if (producto.eliminado) {
+                                cout << "NOTA: A fecha de este reporte, este producto no se encuentra disponible.\n";
+                            }
+                        } 
+                    }
+                } else {
+                    cout << "No se pudo abrir el archivo de productos\n";
+                }
+                archivoBinProductos.close();
+
+                archivoBinFacturas.open(nombreArchivoBinFacturas, ios::binary);
+                if (archivoBinFacturas.good()) {
+                    cout << "DATOS DE LA FACTURA\n";
+                    cout << "Número de Factura: "  << reparacion.numeroFactura << endl;
+                    while (archivoBinFacturas.read((char*)(&factura), sizeof(datosFactura))) {
+                        if (reparacion.numeroFactura == factura.numeroFactura && factura.anulada==false) {
+                            cout << "Fecha de emisión: " << factura.fecha_emision_factura.dia << "/" << factura.fecha_emision_factura.mes << "/" << factura.fecha_emision_factura.anio << endl;
+                        } 
+                    }
+                } else {
+                    cout << "No se pudo abrir el archivo de facturas\n";
+                }
+                archivoBinFacturas.close();
+
+                cout << "Precio de la Reparación: " << reparacion.precioReparacion << endl;
+                cout << "Motivo: " << reparacion.descripcion << endl;
             }
         }
     } else {
@@ -442,26 +704,55 @@ void imprimirReporteMensualReparaciones (string nombreArchivoBin, string nombreA
     }
 }
 
-void menuABM_Reparacion(string nombreArchivoBin) {
+int codigoProductoMasVecesReparadoDelMes(string ) {
+
+}
+
+void reporteProductoMensualMasReparadoPantalla(string nombreArchivoReparaciones, string nombreArchivoProductos) {
+    ifstream archivoReparaciones;
+    ifstream archivoProductos;
+    Reparaciones reparacion;
+    DatosProducto producto;
+    int anioBuscado;
+
+    "REPORTE ANUAL DE PRODUCTOS REPARADOS\n";
+    cout << "Ingrese el año del reporte: ";
+    cin >> anioBuscado;
+    archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
+    if (archivoReparaciones.good()) {
+        system("cls");
+        cout << "=== REPORTE DE PRODUCTOS MÁS VECES REPARADOS DEL AÑO " << anioBuscado << " ===\n";
+        while(archivoReparaciones.read((char*)(&reparacion), sizeof(DatosReparacion))) {
+            if (reparacion.fechaReparacion.anio==anioBuscado) {
+            }
+        }
+    } else {
+        cout << "Error al abrir el archivo de Reaparaciones\n";
+        return;
+    }
+
+}
+
+void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, string nombreArchivoCliente, string nombreArchivoProducto) {
     int opcion;
     do {
         cout << "== MENÚ REPARACIONES ==\n";
         cout << "\t1. Agregar registro de reparación\n";
         cout << "\t2. Encontrar registro de reparación\n";
         cout << "\t3. Modificar descripción de reaparación\n";
-        cout << "\t4. Reporte Mensual de Reapraciones\n";
-        cout << "\t5. Mostrar producto más veces reparado\n";
+        cout << "\t4. Reporte Mensual: Reparaciones de un mes específico\n";
+        cout << "\t5. Reporte Anual: Reparaciones del prodcuto con más reparaciones del mes\n";
         cout << "\t0. Volver\n";
         cout << "--> ";
         cin >> opcion;
         if (opcion==1) {
-            agregarDatosReparacion(nombreArchivoBin);
+            agregarDatosReparacion(nombreArchivoBin,nombreArchivoFactura, nombreArchivoCliente, nombreArchivoProducto);
         } else if (opcion==2) {
             encontrarReparacion(nombreArchivoBin);
         } else if (opcion==3) {
             modificarDatosReparacion(nombreArchivoBin);
         } else if(opcion==4) {
-
+            ReporteMensualReparacionesPantalla(nombreArchivoBin, nombreArchivoCliente, nombreArchivoFactura, nombreArchivoProducto);
         } else if (opcion==5) {
 
         } else if (opcion==0) {
