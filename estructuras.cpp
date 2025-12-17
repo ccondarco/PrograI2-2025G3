@@ -11,7 +11,7 @@ struct Fecha
 
 struct DatosCliente
 {
-    char CI_Cliente[30];
+    char CI_Cliente[10];
     char nombre[30];
     char apellido[30];
     Fecha fechaNacimiento;
@@ -39,10 +39,10 @@ struct DatosProducto
 
 struct ventaProducto
 {
-    int codigoProducto;
     char CI_Cliente[10];
     char CI_Empleado[10];
     Fecha fechaDeVenta;
+    int codigoProducto;
     int cantidad;
     float precioUnitario;
     bool eliminada;
@@ -68,3 +68,4 @@ struct datosFactura
     int metodo_pago;
     bool anulada;
 };
+
