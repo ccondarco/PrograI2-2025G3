@@ -704,9 +704,75 @@ void ReporteMensualReparacionesPantalla (string nombreArchivoBinReparaciones, st
     }
 }
 
-int codigoProductoMasVecesReparadoDelMes(string ) {
-
+bool estaEsteNumeroEnEsteVector(int num, vector<int> vectorCodigos) {
+    for(int i=0; i<vectorCodigos.size(); i++) {
+        if (num==vectorCodigos[i]) {
+            return true;
+        }
+    }
+    return false; // retornará falso si no se encontrara ese numero en el vector de códigos
 }
+
+bool existeElProducto (string nombreArchivoProductos, int codigoProducto) {
+    ifstream archivo;
+    DatosProducto producto;
+    archivo.open(nombreArchivoProductos, ios::binary);
+    if (archivo.good()) {
+        while(archivo.read((char*)(&producto), sizeof(DatosProducto))) {
+            if (producto.codigo == codigoProducto && producto.eliminado==false) {
+                return true;
+            }
+        }
+    } else {
+        cout << "No se pudo abrir el archivo de productos\n";
+    }
+    archivo.close();
+    return false;
+}
+
+int codigoProductoMasVecesReparadoDelMes(string nombreArchivoReparaciones, string nombreArchivoProductos, int mes, int anio) {
+    ifstream archivoReparaciones;
+    Reparaciones reparacion;
+    vector<int> codigosTemporalesdelMes = {-1}; //empieza con -1 para que pueda escanear el código la primera vez
+    vector<int> reparacionesTemporalSegunCodigo = {0}; // se inicializa igual con un numero para que puedan estar ambos a la par
+    int codigoMasReparado;
+    int cantidadDeReparacionesMayor = 0;
+
+    archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
+    if (archivoReparaciones.good()) {
+        if (anio==reparacion.fechaReparacion.anio && mes==reparacion.fechaReparacion.mes && estaEsteNumeroEnEsteVector(reparacion.codigoProducto,codigosTemporalesdelMes)==false && existeElProducto(nombreArchivoProductos, reparacion.codigoProducto)) {
+            codigosTemporalesdelMes.push_back(reparacion.codigoProducto);
+            reparacionesTemporalSegunCodigo.push_back(0); // todas las reparaciones están en 0, pero los vectores necestian ser del mismo tamaño
+        }
+    } else {
+        cout << "No se puedo abrir el archivo de Reparaciones\n";
+        return;
+    }
+    archivoReparaciones.close();
+
+    // se vuelve a abrir el archivo esta vez para ver entre cada codigo cuantas ventas tienen
+    for (int i=0; i<codigosTemporalesdelMes.size(); i++) {
+        if (i>0) { // no se toma en cuenta el primer miebro porque es -1
+            archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
+            while(archivoReparaciones.read((char*)(&reparacion),sizeof(Reparaciones))) {
+                if (reparacion.codigoProducto == i) {
+                    reparacionesTemporalSegunCodigo[i]++; // se van sumando según i las reparaciones sin importar su orden
+                }
+            }
+            archivoReparaciones.close();
+        }
+    }
+
+    //Ahora se compara la cantidad de reparaciones por codigo
+    for (int i=0; i<reparacionesTemporalSegunCodigo.size(); i++) {
+        if (i>0 && cantidadDeReparacionesMayor<reparacionesTemporalSegunCodigo[i]) {
+            cantidadDeReparacionesMayor = reparacionesTemporalSegunCodigo[i];
+            codigoMasReparado = codigosTemporalesdelMes[i];
+        }
+    }
+    return codigoMasReparado;
+}
+
 
 void reporteProductoMensualMasReparadoPantalla(string nombreArchivoReparaciones, string nombreArchivoProductos) {
     ifstream archivoReparaciones;
@@ -714,20 +780,52 @@ void reporteProductoMensualMasReparadoPantalla(string nombreArchivoReparaciones,
     Reparaciones reparacion;
     DatosProducto producto;
     int anioBuscado;
+    int mesBuscado;
+    int codigoDelProductoMasVecesReparado;
+    int contadorReparaciones = 0;
 
-    "REPORTE ANUAL DE PRODUCTOS REPARADOS\n";
+    "REPORTE MENSUAL DE PRODUCTO MÁS REPARADO\n";
     cout << "Ingrese el año del reporte: ";
     cin >> anioBuscado;
+    cout << "Ingrese el mes del reporte: ";
+    cin >> mesBuscado;
+    codigoDelProductoMasVecesReparado = codigoProductoMasVecesReparadoDelMes(nombreArchivoReparaciones, nombreArchivoProductos, mesBuscado, anioBuscado);
+    
+    archivoProductos.open(nombreArchivoProductos,ios::binary);
+    if (archivoProductos.good()) {
+        system("cls");
+        cout << "=== REPORTE DEL MES DE " << meses[mesBuscado] << " DEL AÑO " << anioBuscado << " ===\n";
+        while (archivoProductos.read((char*)(&producto), sizeof(DatosProducto))) {
+            if (producto.codigo == codigoDelProductoMasVecesReparado && producto.eliminado==false) {
+                cout << "== PRODUCTO MÁS REPARADO DEL MES ==\n";
+                cout << "Código: " << producto.codigo << endl;
+                cout << "Modelo: " << producto.modelo << endl;
+                cout << "Categoría: " << producto.categoria << endl;
+                cout << "Precio: " << producto.precioVenta << endl;
+                cout << "Stock: " << producto.stock << endl;
+                cout << "=========================\n";
+            }
+        }
+        system("pause");
+        archivoProductos.close();
+    } else {
+        cout << "Error al buscar el producto\n";
+        system("pause");
+        return;
+    }
+
     archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
     if (archivoReparaciones.good()) {
-        system("cls");
-        cout << "=== REPORTE DE PRODUCTOS MÁS VECES REPARADOS DEL AÑO " << anioBuscado << " ===\n";
+        cout << "== REPARACIONES DE ESE MES ==\n";
+        cout << "FECHA\tCI\tFACTURA\tPRECIO\n";
         while(archivoReparaciones.read((char*)(&reparacion), sizeof(DatosReparacion))) {
-            if (reparacion.fechaReparacion.anio==anioBuscado) {
+            if (reparacion.fechaReparacion.anio==anioBuscado && reparacion.fechaReparacion.mes==mesBuscado && codigoDelProductoMasVecesReparado==reparacion.codigoProducto) {
+                cout << reparacion.fechaReparacion.dia << "/" << reparacion.fechaReparacion.mes << "/" << reparacion.fechaReparacion.anio;
+                cout << "\t" << reparacion.CI_cliente << "\t" << reparacion.numeroFactura << "\t" << reparacion.precioReparacion << "\n";
             }
         }
     } else {
-        cout << "Error al abrir el archivo de Reaparaciones\n";
+        cout << "Error al abrir el archivo de Reparaciones\n";
         return;
     }
 
@@ -754,7 +852,7 @@ void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, st
         } else if(opcion==4) {
             ReporteMensualReparacionesPantalla(nombreArchivoBin, nombreArchivoCliente, nombreArchivoFactura, nombreArchivoProducto);
         } else if (opcion==5) {
-
+            reporteProductoMensualMasReparadoPantalla(nombreArchivoBin,nombreArchivoProducto);
         } else if (opcion==0) {
             cout << "Volviendo al menú principal...\n";
         }
