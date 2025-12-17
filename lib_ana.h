@@ -169,7 +169,7 @@ void reporte_ventas_diarias(string nombre_archivo_ventas)
 
     while (archivo_ventas.read((char*)&venta, sizeof(ventaProducto)))
     {
-        if (venta.facturada && venta.fechaDeVenta.dia == fecha.dia && venta.fechaDeVenta.mes == fecha.mes && venta.fechaDeVenta.anio == fecha.anio)
+        if (venta.facturada && !venta.eliminada && venta.fechaDeVenta.dia == fecha.dia && venta.fechaDeVenta.mes == fecha.mes && venta.fechaDeVenta.anio == fecha.anio)
         {
             subtotal = venta.cantidad * venta.precioUnitario;
             total = total + subtotal;
@@ -259,7 +259,8 @@ void reporte_temporada_alta(string nombre_archivo_ventas)
 bool buscar_producto(int codigo, DatosProducto &producto_encontrado, string nombre_archivo)
 {
     ifstream archivo_productos;
-    
+    bool encontrado = false;
+
     archivo_productos.open(nombre_archivo, ios::binary);
 
     if (!archivo_productos.good())
@@ -267,16 +268,15 @@ bool buscar_producto(int codigo, DatosProducto &producto_encontrado, string nomb
         cout << "No se pudo abrir el archivo de productos." << endl;
         return false;
     }
-    while (archivo_productos.read((char*)&producto_encontrado, sizeof(DatosProducto)))
+    while (archivo_productos.read((char*)&producto_encontrado, sizeof(DatosProducto)) && !encontrado)
     {
         if (producto_encontrado.codigo == codigo && !producto_encontrado.eliminado)
         {
-            return true;
+            encontrado = true;
         }
     }
-
     archivo_productos.close();
-    return false;
+    return encontrado;
 }
 
 void adicionar_venta(string nombre_archivo_ventas, string nombre_archivo_productos)
@@ -788,6 +788,7 @@ void mostrar_detalle_factura(string nombre_archivo_facturas, string nombre_archi
     float subtotal = 0.0;
     float total = 0.0;
     string estado_factura;
+    bool producto_encontrado = false;
 
     cout << "Ingresar número de factura a buscar: ";
     cin >> numero_factura_a_buscar;
@@ -844,6 +845,9 @@ void mostrar_detalle_factura(string nombre_archivo_facturas, string nombre_archi
     {
         if (venta.numeroFactura == numero_factura_a_buscar && !venta.eliminada)
         {
+            producto_encontrado = false;
+            // Se debe reiniciar para la siguiente venta.
+            
             subtotal = venta.cantidad * venta.precioUnitario;
             total = total + subtotal;
 
@@ -854,11 +858,23 @@ void mostrar_detalle_factura(string nombre_archivo_facturas, string nombre_archi
                 return;
             }
             
-            cout << venta.codigoProducto << "\t" << producto.categoria << "-" << producto.modelo << "\t" << venta.cantidad << "\t" << venta.precioUnitario << "\t" << subtotal << endl;
+            while (archivo_productos.read((char*)&producto, sizeof(DatosProducto)) && !producto_encontrado)
+            {
+                if (producto.codigo == venta.codigoProducto && !producto.eliminado)
+                {
+                    producto_encontrado = true;
+                }
+            }
             
+            if (producto_encontrado)
+            {
+                cout << venta.codigoProducto << "\t" << producto.categoria << "-" << producto.modelo << "\t" << venta.cantidad << "\t" << venta.precioUnitario << "\t" << subtotal << endl;
+            }
+
             archivo_productos.close();
         }
     }
+
     archivo_ventas.close();
     
     cout << endl;
@@ -968,6 +984,7 @@ void menu_facturacion(string nombre_archivo_ventas, string nombre_archivo_factur
         cout << "5 Crear factura" << endl;
         cout << "6 Anular factura" << endl;
         cout << "7 Listado de facturas emitidas" << endl;
+        cout << "8 Mostrar detalle de factura emitida" << endl;
         cout << "0 Volver a Menú Principal" << endl;
         cout << endl;
         cout << "Seleccionar opción: ";
@@ -1004,7 +1021,7 @@ void menu_facturacion(string nombre_archivo_ventas, string nombre_archivo_factur
                 break;
 
             case 8:
-                menu_mostrar_detalle_factura(nombre_archivo_ventas, nombre_archivo_facturas);
+                mostrar_detalle_factura(nombre_archivo_facturas, nombre_archivo_ventas, nombre_archivo_productos);
                 break;
 
             default:
