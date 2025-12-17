@@ -48,7 +48,6 @@ struct ventaProducto
     bool eliminada;
     bool facturada;
     int numeroFactura;
-    bool factura_anulada;
 };
 
 struct Reparaciones
@@ -69,5 +68,6 @@ struct datosFactura
     int metodo_pago;
     bool anulada;
 };
+
 
 
