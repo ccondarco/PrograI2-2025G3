@@ -8,18 +8,18 @@ int main() {
     system("cls");
     
     // Nombres de los archivos .bin ^w^)r
-    string nombreArchivoClientes = "";
-    string nombreArchivoEmpleados = "";
-    string nombreArchivoProductos = "Productos_02.bin";
-    string nombreArchivoVentas = "";
-    string nombreArchivoFacturas = "";
-    string nombreArchivoReparaciones = "Reparaciones_02.bin";
+    string nombreArchivoClientes = "Clientes_03.bin";
+    string nombreArchivoEmpleados = "Empleados_03.bin";
+    string nombreArchivoProductos = "Productos_03.bin";
+    string nombreArchivoVentas = "Ventas_03.bin";
+    string nombreArchivoFacturas = "Facturas_03.bin";
+    string nombreArchivoReparaciones = "Reparaciones_03.bin";
 
     vector<string> metodos_pago = {"Efectivo", "Tarjeta", "QR"};
     int opcion;
     do {
         system("cls");
-        cout << "=== MENÚ PRINCIPAL ===\n";
+        cout << "=== MENÚ PRINCIPAL - SUCURSAL OBRAJES - SAMSUNG ===\n";
         cout << "\t1. CLIENTES\n";
         cout << "\t2. EMPLEADOS\n";
         cout << "\t3. PRODUCTOS\n";
@@ -29,11 +29,11 @@ int main() {
         cout << "-->";
         cin >> opcion;
         if (opcion==1) {
-            menuClientes();
+            menuClientes(nombreArchivoClientes);
         } else if (opcion==2){
-            menuEmpleados();
+            menuEmpleados(nombreArchivoEmpleados, nombreArchivoVentas);
         } else if(opcion==3) {
-            menuABM_Productos(nombreArchivoClientes);
+            menuABM_Productos(nombreArchivoProductos);
         } else if(opcion==4) {
             menu_principal(nombreArchivoVentas, nombreArchivoFacturas, nombreArchivoProductos, metodos_pago);
         } else if(opcion==5) {
