@@ -85,7 +85,7 @@ struct datosFactura
 void llenarDatosCliente(DatosCliente &c) {
     cout << endl << "INGRESO DE DATOS DEL CLIENTE" << endl;
     cout << "Ingrese el CI del cliente: ";
-    cin.getline(c.CI_Cliente, 30);
+    cin.getline(c.CI_Cliente, 10);
     cout << "Ingrese el nombre del cliente: ";
     cin.getline(c.nombre, 30);
     cout << "Ingrese el apellido del cliente: ";
@@ -2275,3 +2275,4 @@ void menu_principal(string nombre_archivo_ventas, string nombre_archivo_facturas
 
     } while (opcion != 0);
 }
+
