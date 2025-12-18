@@ -73,7 +73,7 @@ struct datosFactura
     bool anulada;
 };
 
-void crear_productos_prueba(string nombre_archivo_productos)
+/* void crear_productos_prueba(string nombre_archivo_productos)
 {
     ofstream archivo_productos;
     
@@ -94,7 +94,7 @@ void crear_productos_prueba(string nombre_archivo_productos)
     archivo_productos.write((char*)&p3, sizeof(DatosProducto));
 
     archivo_productos.close();
-}
+} */
 
 
 
@@ -250,6 +250,82 @@ void reporte_temporada_alta(string nombre_archivo_ventas)
 
     system("pause");
 }
+
+
+
+void reporteMesMasVentas() {
+    ifstream archivo_ventas;
+    ventaProducto venta;
+    
+    // Array para meses (1-12)
+    string nombresMeses[] = {"", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio","Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
+    
+    // Contadores para cada mes
+    float ventasPorMes[13] = {0}; // Indice 0 no usado
+    int cantidadPorMes[13] = {0};
+    
+    archivo_ventas.open("ventas.bin", ios::binary);
+    if (!archivo_ventas.is_open()) {
+        cout << "No hay ventas registradas para generar el reporte." << endl;
+        return;
+    }
+    
+    // Calcular ventas por mes
+    while (archivo_ventas.read((char*)&venta, sizeof(ventaProducto))) {
+        if (!venta.eliminada) {
+            int mes = venta.fechaDeVenta.mes;
+            if (mes >= 1 && mes <= 12) {
+                float subtotal = venta.cantidad * venta.precioUnitario;
+                ventasPorMes[mes] += subtotal;
+                cantidadPorMes[mes] += venta.cantidad;
+            }
+        }
+    }
+    archivo_ventas.close();
+    
+    // Encontrar mes con mas ventas
+    int mesTop = 0;
+    float maxVentasMes = 0;
+    int maxCantidad = 0;
+    
+    for (int mes = 1; mes <= 12; mes++) {
+        if (ventasPorMes[mes] > maxVentasMes) {
+            maxVentasMes = ventasPorMes[mes];
+            maxCantidad = cantidadPorMes[mes];
+            mesTop = mes;
+        }
+    }
+    
+    cout << endl << "=== REPORTE: MES CON MAS VENTAS ===" << endl;
+    
+    if (mesTop > 0) {
+        cout << "Mes con mas ventas: " << nombresMeses[mesTop] << endl;
+        cout << "Ventas totales del mes: $" << maxVentasMes << endl;
+        cout << "Cantidad de productos vendidos: " << maxCantidad << endl;
+    } else {
+        cout << "No se encontraron ventas registradas." << endl;
+    }
+    
+    // Mostrar ventas por todos los meses
+    cout << endl << "VENTAS POR MES:" << endl;
+    cout << "==================" << endl;
+    
+    float totalAnual = 0;
+    int totalProductosAnual = 0;
+    
+    for (int mes = 1; mes <= 12; mes++) {
+        if (ventasPorMes[mes] > 0) {
+            cout << nombresMeses[mes] << ": $" << ventasPorMes[mes] 
+                 << " (" << cantidadPorMes[mes] << " productos)" << endl;
+            totalAnual += ventasPorMes[mes];
+            totalProductosAnual += cantidadPorMes[mes];
+        }
+    }
+    
+    cout << endl << "Total anual: $" << totalAnual << endl;
+    cout << "Total productos vendidos anual: " << totalProductosAnual << endl;
+}
+
 
 
 
@@ -445,9 +521,6 @@ void eliminar_venta(string nombre_archivo_ventas)
     archivo_ventas.close();
     system("pause");
 }
-
-
-
 
 int generar_numero_factura(string nombre_archivo_facturas)
 {
@@ -662,19 +735,8 @@ void crear_factura(string nombre_archivo_facturas, string nombre_archivo_ventas,
             venta.numeroFactura = factura_nueva.numeroFactura;
 
             descontar_stock(venta.codigoProducto, venta.cantidad, nombre_archivo_productos);
-            // CÓMO SE LLAMA EL ARCHIVO DE PRODUCTOS????
+            
             alerta_stock_producto(venta.codigoProducto, nombre_archivo_productos, 5);
-
-
-
-
-
-
-
-
-
-
-
 
             archivo_ventas.write((char*)&venta, sizeof(ventaProducto));
         }
@@ -747,25 +809,10 @@ void anular_factura(string nombre_archivo_facturas, string nombre_archivo_ventas
             venta.eliminada = true;
             // La venta ahora ya fue eliminada.
 
-            // Al anular la factura, las ventas asociadas se marcan como eliminadas para evitar que vuelvan a aparecer en reportes.
-
             archivo_ventas.write((char*)&venta, sizeof(ventaProducto));
 
             sumar_stock(venta.codigoProducto, venta.cantidad, nombre_archivo_productos);
             // Se devuelve el stock.
-
-            // CÓMO SE LLAMA EL ARCHIVO DE PRODUCTOS?
-
-
-
-
-
-
-
-
-
-
-
         }
     }
     archivo_ventas.close();
@@ -934,7 +981,8 @@ void menu_reportes(string nombre_archivo_ventas, string nombre_archivo_productos
         cout << "1. Ventas por cliente" << endl;
         cout << "2. Ventas diarias" << endl;
         cout << "3. Productos disponibles" << endl;
-        cout << "4. Temporada alta de ventas por mes ??????????????????????????????????????????????????????????????????????????????" << endl;
+        cout << "4. Reporte de mes con más ventas" << endl;
+        cout << "5. Reporte detallado de mes con más ventas" << endl;
         cout << "0. Volver" << endl;
         cout << endl;
         cout << "Seleccionar opción: ";
@@ -956,6 +1004,10 @@ void menu_reportes(string nombre_archivo_ventas, string nombre_archivo_productos
 
             case 4:
                 reporte_temporada_alta(nombre_archivo_ventas);
+                break;
+
+            case 5:
+                reporteMesMasVentas();
                 break;
 
             default:
@@ -981,10 +1033,12 @@ void menu_facturacion(string nombre_archivo_ventas, string nombre_archivo_factur
         cout << "2 Modificar venta" << endl;
         cout << "3 Eliminar venta" << endl;
         cout << "4 Listado de ventas pendientes" << endl;
+        cout << endl;
         cout << "5 Crear factura" << endl;
         cout << "6 Anular factura" << endl;
         cout << "7 Listado de facturas emitidas" << endl;
         cout << "8 Mostrar detalle de factura emitida" << endl;
+        cout << endl;
         cout << "0 Volver a Menú Principal" << endl;
         cout << endl;
         cout << "Seleccionar opción: ";
