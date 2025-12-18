@@ -847,9 +847,9 @@ void mostrar_detalle_factura(string nombre_archivo_facturas, string nombre_archi
         return;
     }
 
-    while (archivo_facturas.read((char*)&factura, sizeof(datosFactura)))
+    while (archivo_facturas.read((char*)&factura, sizeof(datosFactura)) && !factura_encontrada)
     {
-        if (factura.numeroFactura == numero_factura_a_buscar && !factura_encontrada)
+        if (factura.numeroFactura == numero_factura_a_buscar)
         {
             factura_encontrada = true;
         }
@@ -1126,3 +1126,4 @@ void menu_principal(string nombre_archivo_ventas, string nombre_archivo_facturas
 
     } while (opcion != 0);
 }
+
