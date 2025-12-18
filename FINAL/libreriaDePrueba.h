@@ -114,13 +114,14 @@ void llenarDatosCliente(string nombreArchivo) {
     archivo.open(nombreArchivo, ios::binary | ios::app);
     
     if (!archivo.is_open()) {
-        cout << "Error: no se pudo guardar clientes.bin" << endl;
+        cout << "Error: no se pudo guardar el archivo" << endl;
+        system("pause");
         return;
     }
     
     archivo.write((char*)&c, sizeof(DatosCliente));
     archivo.close();
-    cout << "Cliente guardado exitosamente en clientes.bin" << endl;
+    cout << "Cliente guardado exitosamente." << endl;
     system("pause");
 }
 
@@ -230,7 +231,7 @@ void buscarClientePorCI(string nombreArchivo) {
         return;
     }
     
-    while (archivo.read((char*)&c, sizeof(DatosCliente))) {
+    while (archivo.read((char*)&c, sizeof(DatosCliente)) && !encontrado) {
         if (strcmp(c.CI_Cliente, ciBuscar) == 0 && !c.eliminado) {
             encontrado = true;
             cout << endl << "CLIENTE ENCONTRADO:" << endl;
@@ -240,7 +241,6 @@ void buscarClientePorCI(string nombreArchivo) {
             cout << "Telefono: " << c.telefono << endl;
             cout << "Correo: " << c.correo << endl;
             system("pause");
-            break;
         }
     }
     
@@ -416,13 +416,15 @@ void llenarDatosEmpleado(string nombreArchivo) {
     archivo.open(nombreArchivo, ios::binary | ios::app);
     
     if (!archivo.is_open()) {
-        cout << "Error: no se pudo crear/abrir empleado.bin" << endl;
+        cout << "Error: no se pudo crear/abrir el archivo de empleados." << endl;
+        system("pause");
         return;
     }
     
     archivo.write((char*)&e, sizeof(DatosEmpleado));
     archivo.close();
-    cout << "Empleado guardado exitosamente en empleado.bin" << endl;
+    cout << "Empleado guardado exitosamente." << endl;
+    system("pause");
 }
 
 
@@ -621,18 +623,17 @@ void buscarEmpleadoPorCI(string nombreArchivo) {
         return;
     }
     
-    while (archivo.read((char*)&e, sizeof(DatosEmpleado))) {
+    while (archivo.read((char*)&e, sizeof(DatosEmpleado)) && !encontrado) {
         if (strcmp(e.CI_Empleado, ciBuscar) == 0 && !e.eliminado) {
             encontrado = true;
             cout << endl << "EMPLEADO ENCONTRADO:" << endl;
             cout << "CI: " << e.CI_Empleado << endl;
             cout << "Nombre: " << e.nombre << " " << e.apellido << endl;
-            cout << "Rango: " << e.rango << " (";
+            cout << "Rango: ";
             if (e.rango == 1) cout << "Vendedor";
             else if (e.rango == 2) cout << "Cajero";
             else cout << "Desconocido";
             cout << ")" << endl;
-            break;
         }
     }
     
@@ -669,7 +670,7 @@ void reporteEmpleadoMasVende(string nombreArchivoVentas, string nombreArchivoEmp
                 if (empleados[i] == venta.CI_Empleado) {
                     ventasEmpleados[i] += subtotal;
                     encontrado = true;
-                    break;
+                    // break;
                 }
             }
             
@@ -727,7 +728,7 @@ void reporteEmpleadoMasVende(string nombreArchivoVentas, string nombreArchivoEmp
                 else if (empleado.rango == 2) cout << "Cajero";
                 else cout << empleado.rango;
                 cout << endl;
-                break;
+                // break;
             }
         }
         archivoEmpleados.close();
@@ -1130,7 +1131,7 @@ void menuABM_Productos(string nombreArchivoBin) {
         cout << "\t1. Agregar producto\n";
         cout << "\t2. Modificar producto\n";
         cout << "\t3. Eliminar producto\n";
-        cout << "\t4. Mostrar lista de productos disponibles\n";
+        cout << "\t4. Reporte: mostrar lista de productos disponibles\n";
         cout << "\t5. Buscar producto por código\n";
         cout << "\t6. Reporte: productos con bajo stock (menos de 5 unidades)\n";
         cout << "\t0. Volver\n";
@@ -1558,178 +1559,6 @@ void ReporteMensualReparacionesPantalla (string nombreArchivoBinReparaciones, st
     system("pause");
 }
 
-bool estaEsteNumeroEnEsteVector(int num, vector<int> vectorCodigos) {
-    for(int i=0; i<vectorCodigos.size(); i++) {
-        if (num==vectorCodigos[i]) {
-            return true;
-        }
-    }
-    return false; // retornará falso si no se encontrara ese numero en el vector de códigos
-}
-
-bool existeElProducto (string nombreArchivoProductos, int codigoProducto) {
-    ifstream archivo;
-    DatosProducto producto;
-    archivo.open(nombreArchivoProductos, ios::binary);
-    if (archivo.good()) {
-        while(archivo.read((char*)(&producto), sizeof(DatosProducto))) {
-            if (producto.codigo == codigoProducto && producto.eliminado==false) {
-                return true;
-            }
-        }
-    } else {
-        cout << "No se pudo abrir el archivo de productos\n";
-    }
-    archivo.close();
-    return false;
-}
-
-/*
-int codigoProductoMasVecesReparadoDelMes(string nombreArchivoReparaciones, string nombreArchivoProductos, int mes, int anio) {
-    ifstream archivoReparaciones;
-    Reparaciones reparacion;
-    vector<int> codigosTemporalesdelMes = {-1}; //empieza con -1 para que pueda escanear el código la primera vez
-    vector<int> reparacionesTemporalSegunCodigo = {0}; // se inicializa igual con un numero para que puedan estar ambos a la par
-    int codigoMasReparado;
-    int cantidadDeReparacionesMayor = 0;
-
-    archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
-    if (archivoReparaciones.good()) {
-        while (archivoReparaciones.read((char*)(&reparacion), sizeof(Reparaciones))) {
-            if (anio==reparacion.fechaReparacion.anio && mes==reparacion.fechaReparacion.mes && estaEsteNumeroEnEsteVector(reparacion.codigoProducto,codigosTemporalesdelMes)==false && existeElProducto(nombreArchivoProductos, reparacion.codigoProducto)) {
-                codigosTemporalesdelMes.push_back(reparacion.codigoProducto);
-                reparacionesTemporalSegunCodigo.push_back(0); // todas las reparaciones están en 0, pero los vectores necestian ser del mismo tamaño
-            }
-        }
-    } else {
-        cout << "No se puedo abrir el archivo de Reparaciones\n";
-        return -1;
-    }
-    archivoReparaciones.close();
-
-    // se vuelve a abrir el archivo esta vez para ver entre cada codigo cuantas ventas tienen
-    for (int i=0; i<codigosTemporalesdelMes.size(); i++) {
-        if (i>0) { // no se toma en cuenta el primer miebro porque es -1
-            archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
-            while(archivoReparaciones.read((char*)(&reparacion),sizeof(Reparaciones))) {
-                if (reparacion.codigoProducto == i) {
-                    reparacionesTemporalSegunCodigo[i]++; // se van sumando según i las reparaciones sin importar su orden
-                }
-            }
-            archivoReparaciones.close();
-        }
-    }
-
-    //Ahora se compara la cantidad de reparaciones por codigo
-    for (int i=0; i<reparacionesTemporalSegunCodigo.size(); i++) {
-        if (i>0 && cantidadDeReparacionesMayor<reparacionesTemporalSegunCodigo[i]) {
-            cantidadDeReparacionesMayor = reparacionesTemporalSegunCodigo[i];
-            codigoMasReparado = codigosTemporalesdelMes[i];
-        }
-    }
-    return codigoMasReparado;
-} 
-*/
-
-int codigoProductoMasVecesReparadoDelMes(string nombreArchivoReparaciones, string nombreArchivoProductos, int mes, int anio) {
-    ifstream archivoReparaciones;
-    Reparaciones reparacion;
-    vector<int> codigos;
-    vector<int> contadores;
-    int codigoMasReparado = -1;
-    int maxReparaciones = 0;
-    bool encontrado = false;
-
-    archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
-    if (archivoReparaciones.good()) {
-        while (archivoReparaciones.read((char*)(&reparacion), sizeof(Reparaciones))) {
-            if (anio==reparacion.fechaReparacion.anio && mes==reparacion.fechaReparacion.mes) {
-                for (int i = 0; i < codigos.size(); i++) {
-                    if (codigos[i] == reparacion.codigoProducto) {
-                        contadores[i]++;
-                        encontrado = true;
-                        }
-                if (!encontrado) {
-                    codigos.push_back(reparacion.codigoProducto);
-                    contadores.push_back(1);
-                    }
-                }
-            }
-        }
-    } else {
-        cout << "No se puedo abrir el archivo de Reparaciones\n";
-        return -1;
-    }
-    archivoReparaciones.close();
-
-    for (int i = 0; i < contadores.size(); i++) {
-        if (contadores[i] > maxReparaciones) {
-            maxReparaciones = contadores[i];
-            codigoMasReparado = codigos[i];
-        }
-    }
-
-    return codigoMasReparado; // -1 si no hubo reparaciones
-} 
-
-
-void reporteProductoMensualMasReparadoPantalla(string nombreArchivoReparaciones, string nombreArchivoProductos) {
-    ifstream archivoReparaciones;
-    ifstream archivoProductos;
-    Reparaciones reparacion;
-    DatosProducto producto;
-    int anioBuscado;
-    int mesBuscado;
-    int codigoDelProductoMasVecesReparado;
-    int contadorReparaciones = 0;
-
-    cout << "REPORTE MENSUAL DE PRODUCTO MÁS REPARADO\n";
-    cout << "Ingrese el año del reporte: ";
-    cin >> anioBuscado;
-    cout << "Ingrese el mes del reporte: ";
-    cin >> mesBuscado;
-    codigoDelProductoMasVecesReparado = codigoProductoMasVecesReparadoDelMes(nombreArchivoReparaciones, nombreArchivoProductos, mesBuscado, anioBuscado);
-    
-    archivoProductos.open(nombreArchivoProductos,ios::binary);
-    if (archivoProductos.good()) {
-        system("cls");
-        cout << "=== REPORTE DEL MES DE " << meses[mesBuscado] << " DEL AÑO " << anioBuscado << " ===\n";
-        while (archivoProductos.read((char*)(&producto), sizeof(DatosProducto))) {
-            if (producto.codigo == codigoDelProductoMasVecesReparado && producto.eliminado==false) {
-                cout << "== PRODUCTO MÁS REPARADO DEL MES ==\n";
-                cout << "Código: " << producto.codigo << endl;
-                cout << "Modelo: " << producto.modelo << endl;
-                cout << "Categoría: " << producto.categoria << endl;
-                cout << "Precio: " << producto.precioVenta << endl;
-                cout << "Stock: " << producto.stock << endl;
-                cout << "=========================\n";
-            }
-        }
-        system("pause");
-        archivoProductos.close();
-    } else {
-        cout << "Error al buscar el producto\n";
-        system("pause");
-        return;
-    }
-
-    archivoReparaciones.open(nombreArchivoReparaciones, ios::binary);
-    if (archivoReparaciones.good()) {
-        cout << "== REPARACIONES DE ESE MES ==\n";
-        cout << "FECHA\tCI\tFACTURA\tPRECIO\n";
-        while(archivoReparaciones.read((char*)(&reparacion), sizeof(Reparaciones))) {
-            if (reparacion.fechaReparacion.anio==anioBuscado && reparacion.fechaReparacion.mes==mesBuscado && codigoDelProductoMasVecesReparado==reparacion.codigoProducto) {
-                cout << reparacion.fechaReparacion.dia << "/" << reparacion.fechaReparacion.mes << "/" << reparacion.fechaReparacion.anio;
-                cout << "\t" << reparacion.CI_cliente << "\t" << reparacion.numeroFactura << "\t" << reparacion.precioReparacion << "\n";
-            }
-        }
-    } else {
-        cout << "Error al abrir el archivo de Reparaciones\n";
-        return;
-    }
-
-}
-
 void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, string nombreArchivoCliente, string nombreArchivoProducto) {
     int opcion;
     do {
@@ -1738,7 +1567,7 @@ void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, st
         cout << "\t2. Encontrar registro de reparación\n";
         cout << "\t3. Modificar descripción de reaparación\n";
         cout << "\t4. Reporte Mensual: Reparaciones de un mes específico\n";
-        cout << "\t5. Mostrar reparaciones\n";
+        cout << "\t5. Reporte: Mostrar Todas las reparaciones\n";
         cout << "\t0. Volver\n";
         cout << "--> ";
         cin >> opcion;
@@ -1903,83 +1732,6 @@ void reporte_temporada_alta(string nombre_archivo_ventas)
 
     system("pause");
 }
-
-
-
-void reporteMesMasVentas() {
-    ifstream archivo_ventas;
-    ventaProducto venta;
-    
-    // Array para meses (1-12)
-    string nombresMeses[] = {"", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio","Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
-    
-    // Contadores para cada mes
-    float ventasPorMes[13] = {0}; // Indice 0 no usado
-    int cantidadPorMes[13] = {0};
-    
-    archivo_ventas.open("ventas.bin", ios::binary);
-    if (!archivo_ventas.is_open()) {
-        cout << "No hay ventas registradas para generar el reporte." << endl;
-        return;
-    }
-    
-    // Calcular ventas por mes
-    while (archivo_ventas.read((char*)&venta, sizeof(ventaProducto))) {
-        if (!venta.eliminada) {
-            int mes = venta.fechaDeVenta.mes;
-            if (mes >= 1 && mes <= 12) {
-                float subtotal = venta.cantidad * venta.precioUnitario;
-                ventasPorMes[mes] += subtotal;
-                cantidadPorMes[mes] += venta.cantidad;
-            }
-        }
-    }
-    archivo_ventas.close();
-    
-    // Encontrar mes con mas ventas
-    int mesTop = 0;
-    float maxVentasMes = 0;
-    int maxCantidad = 0;
-    
-    for (int mes = 1; mes <= 12; mes++) {
-        if (ventasPorMes[mes] > maxVentasMes) {
-            maxVentasMes = ventasPorMes[mes];
-            maxCantidad = cantidadPorMes[mes];
-            mesTop = mes;
-        }
-    }
-    
-    cout << endl << "=== REPORTE: MES CON MAS VENTAS ===" << endl;
-    
-    if (mesTop > 0) {
-        cout << "Mes con mas ventas: " << nombresMeses[mesTop] << endl;
-        cout << "Ventas totales del mes: $" << maxVentasMes << endl;
-        cout << "Cantidad de productos vendidos: " << maxCantidad << endl;
-    } else {
-        cout << "No se encontraron ventas registradas." << endl;
-    }
-    
-    // Mostrar ventas por todos los meses
-    cout << endl << "VENTAS POR MES:" << endl;
-    cout << "==================" << endl;
-    
-    float totalAnual = 0;
-    int totalProductosAnual = 0;
-    
-    for (int mes = 1; mes <= 12; mes++) {
-        if (ventasPorMes[mes] > 0) {
-            cout << nombresMeses[mes] << ": $" << ventasPorMes[mes] 
-                 << " (" << cantidadPorMes[mes] << " productos)" << endl;
-            totalAnual += ventasPorMes[mes];
-            totalProductosAnual += cantidadPorMes[mes];
-        }
-    }
-    
-    cout << endl << "Total anual: $" << totalAnual << endl;
-    cout << "Total productos vendidos anual: " << totalProductosAnual << endl;
-}
-
-
 
 
 // ============================== FUNCIONES VENTA ==============================
@@ -2350,7 +2102,7 @@ void crear_factura(string nombre_archivo_facturas, string nombre_archivo_ventas,
         return;
     }
     
-    cout << "Fecha de emisión: " << factura_nueva.fecha_emision_factura.dia << "/" << factura_nueva.fecha_emision_factura.mes << "/" << factura_nueva.fecha_emision_factura.anio << endl;
+    cout << "Fecha de venta: " << factura_nueva.fecha_emision_factura.dia << "/" << factura_nueva.fecha_emision_factura.mes << "/" << factura_nueva.fecha_emision_factura.anio << endl;
     // Se obtiene la fecha de emisión de la factura a partir de la primera venta pendiente del cliente.
 
     cout << "\tMÉTODOS DE PAGO" << endl;
@@ -2568,7 +2320,7 @@ void mostrar_detalle_factura(string nombre_archivo_facturas, string nombre_archi
             
             if (producto_encontrado)
             {
-                cout << venta.codigoProducto << "\t" << producto.categoria << "-" << producto.modelo << "\t" << venta.cantidad << "\t" << venta.precioUnitario << "\t" << subtotal << endl;
+                cout << venta.codigoProducto << "\t" << categoriasProductoVector[producto.categoria] << "-" << producto.modelo << "\t" << venta.cantidad << "\t" << venta.precioUnitario << "\t" << subtotal << endl;
             }
 
             archivo_productos.close();
@@ -2633,9 +2385,8 @@ void menu_reportes(string nombre_archivo_ventas, string nombre_archivo_productos
         cout << "======= MENÚ DE REPORTES =======" << endl;
         cout << "1. Ventas por cliente" << endl;
         cout << "2. Ventas diarias" << endl;
-        cout << "3. Productos disponibles" << endl;
-        cout << "4. Reporte de mes con más ventas" << endl;
-        cout << "5. Reporte detallado de mes con más ventas" << endl;
+        cout << "3. Reporte de mes con más ventas" << endl;
+        cout << "4. Reporte detallado de mes con más ventas" << endl;
         cout << "0. Volver" << endl;
         cout << endl;
         cout << "Seleccionar opción: ";
@@ -2652,15 +2403,7 @@ void menu_reportes(string nombre_archivo_ventas, string nombre_archivo_productos
                 break;
 
             case 3:
-                reporte_diario_productos_disponibles(nombre_archivo_productos);
-                break;
-
-            case 4:
-                reporte_temporada_alta(nombre_archivo_ventas);
-                break;
-
-            case 5:
-                reporteMesMasVentas();
+                reporteMesMasVentas(nombre_archivo_ventas);
                 break;
 
             default:
