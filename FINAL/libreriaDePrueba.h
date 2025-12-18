@@ -1375,6 +1375,31 @@ void encontrarReparacion(string nombreArchivo) {
     }
 }
 
+void mostrarReparaciones (string nombreArchivo) {
+    fstream archivo;
+    Reparaciones reparacion;
+
+    archivo.open(nombreArchivo, ios::in | ios::out | ios::binary);
+    if (archivo.good()) {
+        cout << "LISTA DE REPARACIONES\n";
+        while(archivo.read((char*)(&reparacion), sizeof(Reparaciones))) {
+            
+                cout << "\tCliente: " << reparacion.CI_cliente << endl;
+                cout << "\tCodigo del Producto: " << reparacion.codigoProducto << endl;
+                cout << "\tNúmero de Factura: " << reparacion.numeroFactura << endl;
+                cout << "\tFecha: " << reparacion.fechaReparacion.dia << "/" << reparacion.fechaReparacion.mes << "/" << reparacion.fechaReparacion.anio << endl;
+                cout << "\tPrecio de la Reparación: " << reparacion.precioReparacion << endl;
+                cout << "\tDescripción: " << reparacion.descripcion << endl;
+                cout << "-----------------------------------------------------\n"; 
+        }
+    } else {
+        cout << "Error al mostrar reparaciones\n";
+        system("pause");
+        return;
+    }
+    system("pause");
+}
+
 void modificarDatosReparacion(string nombreArchivo) {
     fstream archivo;
     Reparaciones reparacion;
@@ -1437,6 +1462,44 @@ void ReporteMensualReparacionesPantalla (string nombreArchivoBinReparaciones, st
     DatosProducto producto;
     int mesBuscado;
     int anioBuscado;
+    bool unaReparacion = false;
+
+    vector<DatosCliente> clientesTemporal;
+    vector<DatosProducto> productoTemporal;
+    vector<datosFactura> facturaTemporal;
+
+    archivoBinClientes.open(nombreArchivoBinClientes, ios::binary);
+    if (archivoBinClientes.good()) {
+        while(archivoBinClientes.read((char*)(&cliente), sizeof(DatosCliente))) {
+            clientesTemporal.push_back(cliente);
+        }
+    } else {
+        cout << "No se pudo abrir el archivo de clientes\n";
+        return;
+    }
+    archivoBinClientes.close();
+
+    archivoBinProductos.open(nombreArchivoBinProductos, ios::binary);
+    if (archivoBinProductos.good()) {
+        while(archivoBinProductos.read((char*)(&producto), sizeof(DatosProducto))) {
+            productoTemporal.push_back(producto);
+        }
+    } else {
+        cout << "No se pudo abrir el archivo de productos\n";
+        return;
+    }
+    archivoBinProductos.close();
+
+    archivoBinFacturas.open(nombreArchivoBinFacturas, ios::binary);
+    if (archivoBinFacturas.good()) {
+        while(archivoBinFacturas.read((char*)(&factura), sizeof(datosFactura))) {
+            facturaTemporal.push_back(factura);
+        }
+    } else {
+        cout << "No se pudo abrir el archivo de facturas\n";
+        return;
+    }
+    archivoBinFacturas.close();
 
     archivoBinRepararaciones.open(nombreArchivoBinReparaciones, ios::binary);
     if (archivoBinRepararaciones.good()) {
@@ -1448,66 +1511,51 @@ void ReporteMensualReparacionesPantalla (string nombreArchivoBinReparaciones, st
         cout << "===== REPARACIONES DEL MES DE " << meses[mesBuscado] << " DE " << anioBuscado << " =====\n";    
         while(archivoBinRepararaciones.read((char*)(&reparacion), sizeof(Reparaciones))) {
             if (reparacion.fechaReparacion.mes==mesBuscado && reparacion.fechaReparacion.anio==anioBuscado) {
+                unaReparacion = true;
                 cout << "--------------------------------------------------\n";
                 cout << "Fecha: " << reparacion.fechaReparacion.dia << "/" << reparacion.fechaReparacion.mes << "/" << reparacion.fechaReparacion.anio << endl;
-                archivoBinClientes.open(nombreArchivoBinClientes, ios::binary);
-                if (archivoBinClientes.good()) {
-                    cout << "DATOS DEL CLIENTE\n";
-                    cout << "CI: " << reparacion.CI_cliente;
-                    while(archivoBinClientes.read((char*)(&cliente), sizeof(DatosCliente))) {
-                        if (strcmp(reparacion.CI_cliente,cliente.CI_Cliente)==0) {
-                            cout << "Nombres y Apellidos: " << cliente.nombre << " " << cliente.apellido << endl;
-                            cout << "Tel. y Correo: " << cliente.telefono << " / " << cliente.correo << endl;
-                            // PONER  SI ESTÁ ELIMINADO EL CLIENTE O NO
-                        }
+                for (int i=0; i<clientesTemporal.size(); i++) {
+                    if (strcmp(reparacion.CI_cliente, clientesTemporal[i].CI_Cliente)==0) {
+                        cout << "DATOS DEL CLIENTE\n";
+                        cout << "CI: " << clientesTemporal[i].CI_Cliente;
+                        cout << "Nombres y Apellidos: " << clientesTemporal[i].nombre << " " << clientesTemporal[i].apellido << endl;
+                        cout << "Tel. y Correo: " << clientesTemporal[i].telefono << " / " << clientesTemporal[i].correo << endl;
                     }
-                } else {
-                    cout << "No se pudo abrir el archivo de clientes\n";
-                    return;
                 }
-                archivoBinClientes.close();
 
-                archivoBinProductos.open(nombreArchivoBinProductos, ios::binary);
-                if (archivoBinProductos.good()) {
-                    cout << "DATOS DEL PRODUCTO\n";
-                    cout << "Código: "  << reparacion.codigoProducto << endl;
-                    while (archivoBinProductos.read((char*)(&producto), sizeof(DatosProducto))) {
-                        if (reparacion.codigoProducto==producto.codigo) {
-                            cout << "Modelo y categoría: " << producto.modelo << ", " << categoriasProductoVector[producto.categoria] << endl;
-                            cout << "Precio de Venta: " << producto.precioVenta << endl;
-                            if (producto.eliminado) {
+                for (int i=0; i<productoTemporal.size(); i++) {
+                    if (productoTemporal[i].codigo==reparacion.codigoProducto) {
+                        cout << "DATOS DEL PRODUCTO\n";
+                        cout << "Código: " << productoTemporal[i].codigo;
+                        cout << "Modelo y categoría: " << productoTemporal[i].modelo << ", " << categoriasProductoVector[productoTemporal[i].categoria] << endl;
+                        cout << "Precio de Venta: " << productoTemporal[i].precioVenta << endl;
+                        if (productoTemporal[i].eliminado) {
                                 cout << "NOTA: A fecha de este reporte, este producto no se encuentra disponible.\n";
                             }
-                        } 
                     }
-                } else {
-                    cout << "No se pudo abrir el archivo de productos\n";
                 }
-                archivoBinProductos.close();
 
-                archivoBinFacturas.open(nombreArchivoBinFacturas, ios::binary);
-                if (archivoBinFacturas.good()) {
-                    cout << "DATOS DE LA FACTURA\n";
-                    cout << "Número de Factura: "  << reparacion.numeroFactura << endl;
-                    while (archivoBinFacturas.read((char*)(&factura), sizeof(datosFactura))) {
-                        if (reparacion.numeroFactura == factura.numeroFactura && factura.anulada==false) {
-                            cout << "Fecha de emisión: " << factura.fecha_emision_factura.dia << "/" << factura.fecha_emision_factura.mes << "/" << factura.fecha_emision_factura.anio << endl;
-                        } 
+                for (int i=0; i<facturaTemporal.size(); i++) {
+                    if (reparacion.numeroFactura==facturaTemporal[i].numeroFactura) {
+                        cout << "DATOS DE LA FACTURA\n";
+                        cout << "Número de Factura: "  << reparacion.numeroFactura << endl;
+                        cout << "Fecha de emisión: " << facturaTemporal[i].fecha_emision_factura.dia << "/" << facturaTemporal[i].fecha_emision_factura.mes << "/" << facturaTemporal[i].fecha_emision_factura.anio << endl;
                     }
-                } else {
-                    cout << "No se pudo abrir el archivo de facturas\n";
                 }
-                archivoBinFacturas.close();
 
                 cout << "Precio de la Reparación: " << reparacion.precioReparacion << endl;
                 cout << "Motivo: " << reparacion.descripcion << endl;
             }
+        }
+        if (unaReparacion==false) {
+            cout << "No se encontraron reparaciones en ese mes.\n";
         }
     } else {
         cout << "Error al abrir el archivo de reparaciones\n";
         system("pause");
         return;
     }
+    system("pause");
 }
 
 bool estaEsteNumeroEnEsteVector(int num, vector<int> vectorCodigos) {
@@ -1690,7 +1738,7 @@ void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, st
         cout << "\t2. Encontrar registro de reparación\n";
         cout << "\t3. Modificar descripción de reaparación\n";
         cout << "\t4. Reporte Mensual: Reparaciones de un mes específico\n";
-        cout << "\t5. Reporte Mensual: Reparaciones del producto con más reparaciones del mes\n";
+        cout << "\t5. Mostrar reparaciones\n";
         cout << "\t0. Volver\n";
         cout << "--> ";
         cin >> opcion;
@@ -1703,7 +1751,7 @@ void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, st
         } else if(opcion==4) {
             ReporteMensualReparacionesPantalla(nombreArchivoBin, nombreArchivoCliente, nombreArchivoFactura, nombreArchivoProducto);
         } else if (opcion==5) {
-            reporteProductoMensualMasReparadoPantalla(nombreArchivoBin,nombreArchivoProducto);
+            mostrarReparaciones(nombreArchivoBin);
         } else if (opcion==0) {
             cout << "Volviendo al menú principal...\n";
         }
