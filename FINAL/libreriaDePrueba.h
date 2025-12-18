@@ -10,7 +10,7 @@ using namespace std;
 vector<string> meses = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
 vector<string> categoriasProductoVector = {"Celular", "Tablet", "Laptop", "Televisor", "Monitor", "Parlante", "Proyector", "Lavadora", "Refrigerador"};
 vector<int> diasMeses = {0,31,28,31,30,31,30,31,31,30,31,30,31};
-vector<int> diasMesesBisiesto = {0,31,28,31,30,31,30,31,31,30,31,30,31}; // se daj el primer componente como 0 para que vaya de acuerdo a los meses
+vector<int> diasMesesBisiesto = {0,31,28,31,30,31,30,31,31,30,31,30,31}; // se deja el primer componente como 0 para que vaya de acuerdo a los meses
 
 struct Fecha
 {
@@ -82,8 +82,13 @@ struct datosFactura
 };
 
 
-void llenarDatosCliente(DatosCliente &c) {
-    cout << endl << "INGRESO DE DATOS DEL CLIENTE" << endl;
+// ------------------------------------- CLIENTES ------------------------------------------------------------------------------
+
+
+void llenarDatosCliente() {
+    DatosCliente c;
+    system("cls");
+    cout << endl << "=== INGRESO DE NUEVO CLIENTE ===" << endl;
     cout << "Ingrese el CI del cliente: ";
     cin.getline(c.CI_Cliente, 10);
     cout << "Ingrese el nombre del cliente: ";
@@ -91,205 +96,649 @@ void llenarDatosCliente(DatosCliente &c) {
     cout << "Ingrese el apellido del cliente: ";
     cin.getline(c.apellido, 30);
     cout << "Ingrese la fecha de nacimiento del cliente" << endl;
+    cout << "Ingrese el Día: ";
+    cin >> c.fechaNacimiento.dia;
     cout << "Ingrese el Mes: ";
     cin >> c.fechaNacimiento.mes;
-    cout << "Ingrese el Dia: ";
-    cin >> c.fechaNacimiento.dia;
-    cout << "Ingrese el Anio: ";
+    cout << "Ingrese el Año: ";
     cin >> c.fechaNacimiento.anio;
-    cout << "Ingrese el telefono del cliente: ";
+    cout << "Ingrese el teléfono del cliente: ";
     cin >> c.telefono;
     cin.ignore();
     cout << "Ingrese el correo del cliente: ";
     cin.getline(c.correo, 30);
-    cout << endl;
-}
-
-void mostrarDatosCliente(DatosCliente c) {
-    cout << endl << "DATOS DEL CLIENTE" << endl;
-    cout << "El CI del cliente es: " << c.CI_Cliente << endl;
-    cout << "El nombre del cliente es: " << c.nombre << endl;
-    cout << "El apellido del cliente es: " << c.apellido << endl;
-    cout << "La fecha de nacimiento del cliente es: " << c.fechaNacimiento.mes << "/" << c.fechaNacimiento.dia << "/" << c.fechaNacimiento.anio << endl;
-    cout << "El telefono del cliente es: " << c.telefono << endl;
-    cout << "El correo del cliente es: " << c.correo << endl;
-
+    
+    c.eliminado = false;
+    
     ofstream archivo;
     archivo.open("clientes.bin", ios::binary | ios::app);
-
+    
     if (!archivo.is_open()) {
-        cout << "Error no se pudo guardar clientes.bin";
+        cout << "Error: no se pudo guardar clientes.bin" << endl;
         return;
     }
+    
     archivo.write((char*)&c, sizeof(DatosCliente));
     archivo.close();
-    cout << "Cliente guardado en clientes.bin" << endl;
-}
-
-void llenarDatosEmpleado(DatosEmpleado &e) {
-    cout << endl << "INGRESO DE DATOS EMPLEADO" << endl;
-    cout << "Ingrese el CI del empleado: ";
-    cin.getline(e.CI_Empleado, 10);
-    cout << "Ingrese el nombre del empleado: ";
-    cin.getline(e.nombre, 30);
-    cout << "Ingrese el apellido del empleado: ";
-    cin.getline(e.apellido, 30);
-    cout << "Ingrese el rango del empleado (numero entero): ";
-    cin >> e.rango;
-    cin.ignore();
-}
-
-void mostrarDatosEmpleado(DatosEmpleado e) {
-    cout << endl << "DATOS EMPLEADO" << endl;
-    cout << "El CI del empleado es: " << e.CI_Empleado << endl;
-    cout << "El nombre del empleado es: " << e.nombre << endl;
-    cout << "El apellido del empleado es: " << e.apellido << endl;
-    cout << "El rango del empleado es: " << e.rango << endl;
-
-    ofstream archivo;
-    archivo.open("empleado.bin", ios::binary | ios::app);
-
-    if (!archivo) {
-        cout << "Error no se pudo crear empleado.bin" << endl;
-        return;
-    }
-
-    archivo.write((char*)&e, sizeof(DatosEmpleado));
-    archivo.close();
-    cout << "Empleado guardado en empleado.bin" << endl;
+    cout << "Cliente guardado exitosamente en clientes.bin" << endl;
+    system("pause");
 }
 
 void mostrarTodosClientes() {
-    ifstream archivo("clientes.bin", ios::binary);
+    ifstream archivo;
+    DatosCliente c;
+    int contador = 0;
+    int activos = 0;
+    system("cls");
+    
+    archivo.open("clientes.bin", ios::binary);
     
     if (!archivo.is_open()) {
         cout << "No hay clientes registrados o error al abrir el archivo." << endl;
         return;
     }
     
-    DatosCliente c;
-    int contador = 1;
-    
-    cout << endl << "LISTA DE TODOS LOS CLIENTES" << endl;
+    cout << endl << "=== LISTA DE TODOS LOS CLIENTES ===" << endl;
     
     while (archivo.read((char*)&c, sizeof(DatosCliente))) {
-        cout << endl << "CLIENTE " << contador << ":" << endl;
-        cout << "CI: " << c.CI_Cliente << endl;
-        cout << "Nombre: " << c.nombre << " " << c.apellido << endl;
-        cout << "Telefono: " << c.telefono << endl;
-        cout << "Correo: " << c.correo << endl;
         contador++;
-    }
-    
-    archivo.close();
-}
-
-void eliminarCliente() {
-    char ciEliminar[30];
-    cout << endl << "ELIMINAR CLIENTE" << endl;
-    cout << "Ingrese el CI del cliente a eliminar: ";
-    cin.getline(ciEliminar, 30);
-    
-    ifstream archivoEntrada("clientes.bin", ios::binary);
-    ofstream archivoTemp("temp.bin", ios::binary);
-    
-    if (!archivoEntrada.is_open() || !archivoTemp.is_open()) {
-        cout << "Error al abrir los archivos." << endl;
-        return;
-    }
-    
-    DatosCliente c;
-    bool encontrado = false;
-    int eliminados = 0;
-    
-    while (archivoEntrada.read((char*)&c, sizeof(DatosCliente))) {
-        if (strcmp(c.CI_Cliente, ciEliminar) == 0) {
-            cout << "Cliente encontrado y eliminado: " << c.nombre << " " << c.apellido << endl;
-            encontrado = true;
-            eliminados++;
-        } else {
-            archivoTemp.write((char*)&c, sizeof(DatosCliente));
+        if (!c.eliminado) {
+            activos++;
+            cout << endl << "CLIENTE " << activos << ":" << endl;
+            cout << "CI: " << c.CI_Cliente << endl;
+            cout << "Nombre: " << c.nombre << " " << c.apellido << endl;
+            cout << "Fecha Nacimiento: " << c.fechaNacimiento.mes << "/" << c.fechaNacimiento.dia << "/" << c.fechaNacimiento.anio << endl;
+            cout << "Telefono: " << c.telefono << endl;
+            cout << "Correo: " << c.correo << endl;
+            cout << "--------------------------------------" << endl;
         }
     }
     
-    archivoEntrada.close();
-    archivoTemp.close();
+    archivo.close();
+
     
-    if (encontrado) {
-        remove("clientes.bin");
-        rename("temp.bin", "clientes.bin");
-        cout << eliminados << " cliente eliminado" << endl;
+    if (contador == 0) {
+        cout << "No hay clientes registrados en el archivo." << endl;
     } else {
-        cout << "No se encontro cliente con CI: " << ciEliminar << endl;
-        remove("temp.bin");  // Eliminar archivo temporal si no se hizo nada
+        cout << endl << "Total de clientes registrados: " << contador << endl;
+        cout << "Clientes activos: " << activos << endl;
+        cout << "Clientes eliminados (no mostrados): " << (contador - activos) << endl;
+    }
+    system("pause");
+}
+
+void eliminarCliente() {
+    char ciEliminar[10];
+    fstream archivo;
+    DatosCliente c;
+    bool encontrado = false;
+    
+    cout << endl << "=== ELIMINAR CLIENTE (ELIMINACION LOGICA) ===" << endl;
+    cout << "Ingrese el CI del cliente a eliminar: ";
+    cin.getline(ciEliminar, 10);
+    
+    archivo.open("clientes.bin", ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) {
+        cout << "No hay clientes registrados para eliminar" << endl;
+        return;
+    }
+    
+    while (archivo.read((char*)&c, sizeof(DatosCliente)) && !encontrado) {
+        if (strcmp(c.CI_Cliente, ciEliminar) == 0 && !c.eliminado) {
+            encontrado = true;
+            cout << "Cliente encontrado: " << c.nombre << " " << c.apellido << endl;
+            cout << "Esta seguro de marcar como eliminado? (s/n): ";
+            char confirmacion;
+            cin >> confirmacion;
+            cin.ignore();
+            
+            if (confirmacion == 's' || confirmacion == 'S') {
+                c.eliminado = true;
+                archivo.seekp(-sizeof(DatosCliente), ios::cur);
+                archivo.write((char*)&c, sizeof(DatosCliente));
+                archivo.flush();
+                cout << "Cliente marcado como ELIMINADO correctamente." << endl;
+                system("cls");
+            } else {
+                cout << "Operación cancelada." << endl;
+                system("cls");
+            }
+        }
+    }
+    
+    archivo.close();
+    
+    if (!encontrado) {
+        cout << "No se encontro cliente activo con CI: " << ciEliminar << endl;
     }
 }
 
+void buscarClientePorCI() {
+    char ciBuscar[10];
+    ifstream archivo;
+    DatosCliente c;
+    bool encontrado = false;
+    
+    cout << endl << "=== BUSCAR CLIENTE POR CI ===" << endl;
+    cout << "Ingrese el CI del cliente a buscar: ";
+    cin.getline(ciBuscar, 10);
+    
+    archivo.open("clientes.bin", ios::binary);
+    if (!archivo.is_open()) {
+        cout << "No hay clientes registrados." << endl;
+        return;
+    }
+    
+    while (archivo.read((char*)&c, sizeof(DatosCliente))) {
+        if (strcmp(c.CI_Cliente, ciBuscar) == 0 && !c.eliminado) {
+            encontrado = true;
+            cout << endl << "CLIENTE ENCONTRADO:" << endl;
+            cout << "CI: " << c.CI_Cliente << endl;
+            cout << "Nombre: " << c.nombre << " " << c.apellido << endl;
+            cout << "Fecha Nacimiento: " << c.fechaNacimiento.dia << "/" << c.fechaNacimiento.mes << "/" << c.fechaNacimiento.anio << endl;
+            cout << "Telefono: " << c.telefono << endl;
+            cout << "Correo: " << c.correo << endl;
+            system("pause");
+            break;
+        }
+    }
+    
+    archivo.close();
+    
+    if (!encontrado) {
+        cout << "No se encontro cliente activo con CI: " << ciBuscar << endl;
+    }
+}
+
+void modificarCliente() {
+    char ciModificar[10];
+    fstream archivo;
+    DatosCliente c;
+    bool encontrado = false;
+    int opcion;
+    
+    cout << endl << "=== MODIFICAR CLIENTE ===" << endl;
+    cout << "Ingrese el CI del cliente a modificar: ";
+    cin.getline(ciModificar, 10);
+    
+    archivo.open("clientes.bin", ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) {
+        cout << "No hay clientes registrados para modificar" << endl;
+        return;
+    }
+    
+    while (archivo.read((char*)&c, sizeof(DatosCliente)) && !encontrado) {
+        if (strcmp(c.CI_Cliente, ciModificar) == 0 && !c.eliminado) {
+            encontrado = true;
+            
+            cout << endl << "CLIENTE ENCONTRADO:" << endl;
+            cout << "CI: " << c.CI_Cliente << endl;
+            cout << "Nombre: " << c.nombre << " " << c.apellido << endl;
+            cout << "Telefono: " << c.telefono << endl;
+            cout << "Correo: " << c.correo << endl;
+            
+            do {
+                cout << endl << "¿Qué dato desea modificar?" << endl;
+                cout << "1. Nombre" << endl;
+                cout << "2. Apellido" << endl;
+                cout << "3. Telefono" << endl;
+                cout << "4. Correo electrónico" << endl;
+                cout << "5. Fecha de nacimiento" << endl;
+                cout << "6. Salir de modificacion" << endl;
+                cout << "Seleccione una opción: ";
+                cin >> opcion;
+                cin.ignore();
+                
+                switch(opcion) {
+                    case 1:
+                        cout << "Ingrese el nuevo nombre: ";
+                        cin.getline(c.nombre, 30);
+                        cout << "Nombre actualizado correctamente." << endl;
+                        break;
+                    case 2:
+                        cout << "Ingrese el nuevo apellido: ";
+                        cin.getline(c.apellido, 30);
+                        cout << "Apellido actualizado correctamente." << endl;
+                        break;
+                    case 3:
+                        cout << "Ingrese el nuevo telefono: ";
+                        cin >> c.telefono;
+                        cin.ignore();
+                        cout << "Telefono actualizado correctamente." << endl;
+                        break;
+                    case 4:
+                        cout << "Ingrese el nuevo correo electrónico: ";
+                        cin.getline(c.correo, 30);
+                        cout << "Correo electronico actualizado correctamente." << endl;
+                        break;
+                    case 5:
+                        cout << "Ingrese la nueva fecha de nacimiento:" << endl;
+                        cout << "Día: ";
+                        cin >> c.fechaNacimiento.dia;
+                        cout << "Mes: ";
+                        cin >> c.fechaNacimiento.mes;
+                        cout << "Anio: ";
+                        cin >> c.fechaNacimiento.anio;
+                        cin.ignore();
+                        cout << "Fecha de nacimiento actualizada correctamente." << endl;
+                        break;
+                    case 6:
+                        cout << "Saliendo de la modificacion..." << endl;
+                        break;
+                    default:
+                        cout << "Opcion no válida. Intente de nuevo." << endl;
+                }
+                
+            } while (opcion != 6);
+            
+            archivo.seekp(-sizeof(DatosCliente), ios::cur);
+            archivo.write((char*)&c, sizeof(DatosCliente));
+            archivo.flush();
+        }
+    }
+    
+    archivo.close();
+    
+    if (!encontrado) {
+        cout << "No se encontró cliente activo con CI: " << ciModificar << endl;
+    } else {
+        cout << "Cliente modificado correctamente." << endl;
+    }
+}
+
+
+void menuClientes() {
+    int opcion;
+    do {
+        system("cls");
+        cout << endl << "=== MENÚ DE GESTIÓN DE CLIENTES ===" << endl;
+        cout << "1. Registrar nuevo cliente" << endl;
+        cout << "2. Mostrar todos los clientes (solo activos)" << endl;
+        cout << "3. Buscar cliente por CI" << endl;
+        cout << "4. Modificar cliente por CI" << endl;
+        cout << "5. Eliminar cliente por CI (eliminacion logica)" << endl;
+        cout << "6. Reporte: Clientes que mas compran" << endl;
+        cout << "0. Volver al menu principal" << endl;
+        cout << "Seleccione una opcion: ";
+        cin >> opcion;
+        cin.ignore();
+        
+        switch(opcion) {
+            case 1:
+                llenarDatosCliente();
+                break;
+            case 2:
+                mostrarTodosClientes();
+                break;
+            case 3:
+                buscarClientePorCI();
+                break;
+            case 4:
+                modificarCliente();
+                break;
+            case 5:
+                eliminarCliente();
+                break;
+            case 6:
+                cout << "Reporte de clientes que mas compran (requiere ventas.bin)" << endl;
+                // Se implementara en la siguiente version
+                break;
+            case 0:
+                cout << "Volviendo al menu principal..." << endl;
+                break;
+            default:
+                cout << "Opcion no valida. Intente de nuevo." << endl;
+        }
+    } while (opcion != 0);
+}
+
+
+// ---------------------------------------------------- EMPLEADO --------------------------------------------------------
+
+void llenarDatosEmpleado() {
+    DatosEmpleado e;
+    cout << endl << "=== INGRESO DE NUEVO EMPLEADO ===" << endl;
+    cout << "Ingrese el CI del empleado: ";
+    cin.getline(e.CI_Empleado, 10);
+    cout << "Ingrese el nombre del empleado: ";
+    cin.getline(e.nombre, 30);
+    cout << "Ingrese el apellido del empleado: ";
+    cin.getline(e.apellido, 30);
+    cout << "Ingrese el rango del empleado:" << endl;
+    cout << "1. Vendedor" << endl;
+    cout << "2. Cajero" << endl;
+    cout << "Seleccione: ";
+    cin >> e.rango;
+    cin.ignore();
+    
+    e.eliminado = false;
+    
+    ofstream archivo;
+    archivo.open("empleado.bin", ios::binary | ios::app);
+    
+    if (!archivo.is_open()) {
+        cout << "Error: no se pudo crear/abrir empleado.bin" << endl;
+        return;
+    }
+    
+    archivo.write((char*)&e, sizeof(DatosEmpleado));
+    archivo.close();
+    cout << "Empleado guardado exitosamente en empleado.bin" << endl;
+}
+
+
 void mostrarTodosEmpleados() {
-    ifstream archivo("empleado.bin", ios::binary);
+    ifstream archivo;
+    DatosEmpleado e;
+    int contador = 0;
+    int activos = 0;
+    
+    archivo.open("empleado.bin", ios::binary);
     
     if (!archivo.is_open()) {
         cout << "No hay empleados registrados o error al abrir el archivo." << endl;
         return;
     }
     
-    DatosEmpleado e;
-    int contador = 1;
-    
-    cout << endl << "LISTA DE TODOS LOS EMPLEADOS"<<endl;
+    cout << endl << "=== LISTA DE TODOS LOS EMPLEADOS ===" << endl;
     
     while (archivo.read((char*)&e, sizeof(DatosEmpleado))) {
-        cout << endl << "EMPLEADO " << contador << ":" << endl;
-        cout << "CI: " << e.CI_Empleado << endl;
-        cout << "Nombre: " << e.nombre << " " << e.apellido << endl;
-        cout << "Rango: " << e.rango << endl;
         contador++;
+        if (!e.eliminado) {
+            activos++;
+            cout << endl << "EMPLEADO " << activos << ":" << endl;
+            cout << "CI: " << e.CI_Empleado << endl;
+            cout << "Nombre: " << e.nombre << " " << e.apellido << endl;
+            cout << "Rango: " << e.rango << " (";
+            if (e.rango == 1) {
+                cout << "Vendedor";
+            }
+            else if (e.rango == 2) {
+                cout << "Cajero";
+            }
+            else {
+                cout << "Desconocido";
+            }
+            cout << ")" << endl;
+            cout << "--------------------------------------" << endl;
+        }
     }
     
     archivo.close();
+    
+    if (contador == 0) {
+        cout << "No hay empleados registrados en el archivo." << endl;
+    } else {
+        cout << endl << "Total de empleados registrados: " << contador << endl;
+        cout << "Empleados activos: " << activos << endl;
+        cout << "Empleados eliminados (no mostrados): " << (contador - activos) << endl;
+    }
 }
 
-// ELIMINAR UN EMPLEADO POR CI
+
 void eliminarEmpleado() {
     char ciEliminar[10];
+    fstream archivo;
+    DatosEmpleado e;
+    bool encontrado = false;
+    
     cout << endl << "=== ELIMINAR EMPLEADO ===" << endl;
     cout << "Ingrese el CI del empleado a eliminar: ";
     cin.getline(ciEliminar, 10);
     
-    ifstream archivoEntrada("empleado.bin", ios::binary);
-    ofstream archivoTemp("temp_emp.bin", ios::binary);
-    
-    if (!archivoEntrada.is_open() || !archivoTemp.is_open()) {
-        cout << "Error al abrir los archivos." << endl;
+    archivo.open("empleado.bin", ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) {
+        cout << "No hay empleados registrados para eliminar." << endl;
         return;
     }
     
-    DatosEmpleado e;
-    bool encontrado = false;
-    int eliminados = 0;
-    
-    while (archivoEntrada.read((char*)&e, sizeof(DatosEmpleado))) {
-        if (strcmp(e.CI_Empleado, ciEliminar) == 0) {
-            cout << "Empleado encontrado y eliminado: " << e.nombre << " " << e.apellido << endl;
+    while (archivo.read((char*)&e, sizeof(DatosEmpleado)) && !encontrado) {
+        if (strcmp(e.CI_Empleado, ciEliminar) == 0 && !e.eliminado) {
             encontrado = true;
-            eliminados++;
-        } else {
-            archivoTemp.write((char*)&e, sizeof(DatosEmpleado));
+            cout << "Empleado encontrado: " << e.nombre << " " << e.apellido << endl;
+            cout << "Esta seguro de marcar como eliminado? (s/n): ";
+            char confirmacion;
+            cin >> confirmacion;
+            cin.ignore();
+            
+            if (confirmacion == 's' || confirmacion == 'S') {
+                e.eliminado = true;
+                archivo.seekp(-sizeof(DatosEmpleado), ios::cur);
+                archivo.write((char*)&e, sizeof(DatosEmpleado));
+                archivo.flush();
+                cout << "Empleado marcado como ELIMINADO correctamente." << endl;
+            } else {
+                cout << "Operacion cancelada." << endl;
+            }
         }
     }
     
-    archivoEntrada.close();
-    archivoTemp.close();
+    archivo.close();
     
-    if (encontrado) {
-        remove("empleado.bin");
-        rename("temp_emp.bin", "empleado.bin");
-        cout << eliminados << " empleado(s) eliminado(s) correctamente." << endl;
-    } else {
-        cout << "No se encontro empleado con CI: " << ciEliminar << endl;
-        remove("temp_emp.bin");  // Eliminar archivo temporal si no se hizo nada
+    if (!encontrado) {
+        cout << "No se encontro empleado activo con CI: " << ciEliminar << endl;
     }
 }
+
+void modificarEmpleado() {
+    char ciModificar[10];
+    fstream archivo;
+    DatosEmpleado e;
+    bool encontrado = false;
+    int opcion;
+    
+    cout << endl << "=== MODIFICAR EMPLEADO ===" << endl;
+    cout << "Ingrese el CI del empleado a modificar: ";
+    cin.getline(ciModificar, 10);
+    
+    archivo.open("empleado.bin", ios::binary | ios::in | ios::out);
+    if (!archivo.is_open()) {
+        cout << "No hay empleados registrados para modificar" << endl;
+        return;
+    }
+    
+    while (archivo.read((char*)&e, sizeof(DatosEmpleado)) && !encontrado) {
+        if (strcmp(e.CI_Empleado, ciModificar) == 0 && !e.eliminado) {
+            encontrado = true;
+            
+            cout << endl << "EMPLEADO ENCONTRADO:" << endl;
+            cout << "CI: " << e.CI_Empleado << endl;
+            cout << "Nombre: " << e.nombre << " " << e.apellido << endl;
+            cout << "Rango: " << e.rango << endl;
+            
+            do {
+                cout << endl << "Que dato desea modificar?" << endl;
+                cout << "1. Nombre" << endl;
+                cout << "2. Apellido" << endl;
+                cout << "3. Rango" << endl;
+                cout << "4. Salir de modificacion" << endl;
+                cout << "Seleccione una opcion: ";
+                cin >> opcion;
+                cin.ignore();
+                
+                switch(opcion) {
+                    case 1:
+                        cout << "Ingrese el nuevo nombre: ";
+                        cin.getline(e.nombre, 30);
+                        cout << "Nombre actualizado correctamente." << endl;
+                        break;
+                    case 2:
+                        cout << "Ingrese el nuevo apellido: ";
+                        cin.getline(e.apellido, 30);
+                        cout << "Apellido actualizado correctamente." << endl;
+                        break;
+                    case 3:
+                        cout << "Ingrese el nuevo rango:" << endl;
+                        cout << "1. Vendedor" << endl;
+                        cout << "2. Cajero" << endl;
+                        cout << "Seleccione: ";
+                        cin >> e.rango;
+                        cin.ignore();
+                        cout << "Rango actualizado correctamente." << endl;
+                        break;
+                    case 4:
+                        cout << "Saliendo de la modificacion..." << endl;
+                        break;
+                    default:
+                        cout << "Opcion no valida. Intente de nuevo." << endl;
+                }
+                
+            } while (opcion != 4);
+            
+            archivo.seekp(-sizeof(DatosEmpleado), ios::cur);
+            archivo.write((char*)&e, sizeof(DatosEmpleado));
+            archivo.flush();
+        }
+    }
+    
+    archivo.close();
+    
+    if (!encontrado) {
+        cout << "No se encontro empleado activo con CI: " << ciModificar << endl;
+    } else {
+        cout << "Empleado modificado correctamente." << endl;
+    }
+}
+
+void buscarEmpleadoPorCI() {
+    char ciBuscar[10];
+    ifstream archivo;
+    DatosEmpleado e;
+    bool encontrado = false;
+    
+    cout << endl << "=== BUSCAR EMPLEADO POR CI ===" << endl;
+    cout << "Ingrese el CI del empleado a buscar: ";
+    cin.getline(ciBuscar, 10);
+    
+    archivo.open("empleado.bin", ios::binary);
+    if (!archivo.is_open()) {
+        cout << "No hay empleados registrados." << endl;
+        return;
+    }
+    
+    while (archivo.read((char*)&e, sizeof(DatosEmpleado))) {
+        if (strcmp(e.CI_Empleado, ciBuscar) == 0 && !e.eliminado) {
+            encontrado = true;
+            cout << endl << "EMPLEADO ENCONTRADO:" << endl;
+            cout << "CI: " << e.CI_Empleado << endl;
+            cout << "Nombre: " << e.nombre << " " << e.apellido << endl;
+            cout << "Rango: " << e.rango << " (";
+            if (e.rango == 1) cout << "Vendedor";
+            else if (e.rango == 2) cout << "Cajero";
+            else cout << "Desconocido";
+            cout << ")" << endl;
+            break;
+        }
+    }
+    
+    archivo.close();
+    
+    if (!encontrado) {
+        cout << "No se encontro empleado activo con CI: " << ciBuscar << endl;
+    }
+}
+
+void reporteEmpleadoMasVende() {
+    ifstream archivo_ventas;
+    ventaProducto venta;
+    
+    // Vectores para almacenar empleados y sus ventas
+    vector<string> empleados;
+    vector<float> ventasEmpleados;
+    
+    archivo_ventas.open("ventas.bin", ios::binary);
+    if (!archivo_ventas.is_open()) {
+        cout << "No hay ventas registradas para generar el reporte." << endl;
+        return;
+    }
+    
+    // Procesar todas las ventas
+    while (archivo_ventas.read((char*)&venta, sizeof(ventaProducto))) {
+        if (!venta.eliminada) {
+            float subtotal = venta.cantidad * venta.precioUnitario;
+            
+            // Buscar si el empleado ya esta en la lista
+            bool encontrado = false;
+            for (size_t i = 0; i < empleados.size(); i++) {
+                if (empleados[i] == venta.CI_Empleado) {
+                    ventasEmpleados[i] += subtotal;
+                    encontrado = true;
+                    break;
+                }
+            }
+            
+            // Si no esta, agregarlo
+            if (!encontrado) {
+                empleados.push_back(venta.CI_Empleado);
+                ventasEmpleados.push_back(subtotal);
+            }
+        }
+    }
+    archivo_ventas.close();
+    
+    if (empleados.empty()) {
+        cout << "No hay empleados con ventas registradas." << endl;
+        return;
+    }
+    
+    // Ordenar empleados por ventas (ordenamiento simple burbuja)
+    for (size_t i = 0; i < empleados.size() - 1; i++) {
+        for (size_t j = i + 1; j < empleados.size(); j++) {
+            if (ventasEmpleados[j] > ventasEmpleados[i]) {
+                // Intercambiar empleados
+                string tempEmp = empleados[i];
+                empleados[i] = empleados[j];
+                empleados[j] = tempEmp;
+                
+                // Intercambiar ventas
+                float tempVenta = ventasEmpleados[i];
+                ventasEmpleados[i] = ventasEmpleados[j];
+                ventasEmpleados[j] = tempVenta;
+            }
+        }
+    }
+    
+    cout << endl << "=== REPORTE: EMPLEADO QUE MAS VENDE ===" << endl;
+    
+    // Mostrar el empleado top
+    if (!empleados.empty()) {
+        cout << "Empleado con mas ventas:" << endl;
+        cout << "CI: " << empleados[0] << endl;
+        cout << "Total vendido: $" << ventasEmpleados[0] << endl;
+        
+        // Buscar informacion del empleado en el archivo
+        ifstream archivoEmpleados("empleado.bin", ios::binary);
+        DatosEmpleado empleado;
+        bool encontrado = false;
+        
+        while (archivoEmpleados.read((char*)&empleado, sizeof(DatosEmpleado))) {
+            if (strcmp(empleado.CI_Empleado, empleados[0].c_str()) == 0 && !empleado.eliminado) {
+                encontrado = true;
+                cout << "Nombre: " << empleado.nombre << " " << empleado.apellido << endl;
+                cout << "Rango: ";
+                if (empleado.rango == 1) cout << "Vendedor";
+                else if (empleado.rango == 2) cout << "Cajero";
+                else cout << empleado.rango;
+                cout << endl;
+                break;
+            }
+        }
+        archivoEmpleados.close();
+        
+        if (!encontrado) {
+            cout << "Empleado no encontrado en el registro actual." << endl;
+        }
+    }
+    
+    // Mostrar ranking completo
+    cout << endl << "RANKING COMPLETO DE EMPLEADOS:" << endl;
+    cout << "==================================" << endl;
+    
+    for (size_t i = 0; i < empleados.size(); i++) {
+        cout << i+1 << ". CI: " << empleados[i] << " - Ventas: $" << ventasEmpleados[i] << endl;
+    }
+}
+
 
 void reporteMesMasVentas() {
     ifstream archivo_ventas;
@@ -364,170 +813,52 @@ void reporteMesMasVentas() {
     cout << "Total productos vendidos anual: " << totalProductosAnual << endl;
 }
 
-void reporteEmpleadoMasVende() {
-    ifstream archivo_ventas;
-    ventaProducto venta;
-    
-    // Vectores para almacenar empleados y sus ventas
-    vector<string> empleados;
-    vector<float> ventasEmpleados;
-    
-    archivo_ventas.open("ventas.bin", ios::binary);
-    if (!archivo_ventas.is_open()) {
-        cout << "No hay ventas registradas para generar el reporte." << endl;
-        return;
-    }
-    
-    // Procesar todas las ventas
-    while (archivo_ventas.read((char*)&venta, sizeof(ventaProducto))) {
-        if (!venta.eliminada) {
-            float subtotal = venta.cantidad * venta.precioUnitario;
-            
-            // Buscar si el empleado ya esta en la lista
-            bool encontrado = false;
-            for (size_t i = 0; i < empleados.size(); i++) {
-                if (empleados[i] == venta.CI_Empleado) {
-                    ventasEmpleados[i] += subtotal;
-                    encontrado = true;
-                    break;
-                }
-            }
-            
-            // Si no esta, agregarlo
-            if (!encontrado) {
-                empleados.push_back(venta.CI_Empleado);
-                ventasEmpleados.push_back(subtotal);
-            }
-        }
-    }
-    archivo_ventas.close();
-    
-    if (empleados.empty()) {
-        cout << "No hay empleados con ventas registradas." << endl;
-        return;
-    }
-    
-    // Ordenar empleados por ventas
-    for (size_t i = 0; i < empleados.size() - 1; i++) {
-        for (size_t j = i + 1; j < empleados.size(); j++) {
-            if (ventasEmpleados[j] > ventasEmpleados[i]) {
-                // Intercambiar empleados
-                string tempEmp = empleados[i];
-                empleados[i] = empleados[j];
-                empleados[j] = tempEmp;
-                
-                // Intercambiar ventas
-                float tempVenta = ventasEmpleados[i];
-                ventasEmpleados[i] = ventasEmpleados[j];
-                ventasEmpleados[j] = tempVenta;
-            }
-        }
-    }
-    
-    cout << endl << "=== REPORTE: EMPLEADO QUE MAS VENDE ===" << endl;
-    
-    // Mostrar el empleado top
-    if (!empleados.empty()) {
-        cout << "Empleado con mas ventas:" << endl;
-        cout << "CI: " << empleados[0] << endl;
-        cout << "Total vendido: $" << ventasEmpleados[0] << endl;
-        
-        // Buscar informacion del empleado en el archivo
-        ifstream archivoEmpleados("empleado.bin", ios::binary);
-        DatosEmpleado empleado;
-        bool encontrado = false;
-        
-        while (archivoEmpleados.read((char*)&empleado, sizeof(DatosEmpleado))) {
-            if (strcmp(empleado.CI_Empleado, empleados[0].c_str()) == 0 && !empleado.eliminado) {
-                encontrado = true;
-                cout << "Nombre: " << empleado.nombre << " " << empleado.apellido << endl;
-                cout << "Rango: ";
-                if (empleado.rango == 1) cout << "Vendedor";
-                else if (empleado.rango == 2) cout << "Cajero";
-                else cout << empleado.rango;
-                cout << endl;
-                break;
-            }
-        }
-        archivoEmpleados.close();
-        
-        if (!encontrado) {
-            cout << "Empleado no encontrado en el registro actual." << endl;
-        }
-    }
-    
-    // Mostrar ranking completo
-    cout << endl << "RANKING COMPLETO DE EMPLEADOS:" << endl;
-    cout << "==================================" << endl;
-    
-    for (size_t i = 0; i < empleados.size(); i++) {
-        cout << i+1 << ". CI: " << empleados[i] << " - Ventas: $" << ventasEmpleados[i] << endl;
-    }
-}
-
-void Menu() {
-    DatosCliente c;
-    DatosEmpleado e;
+void menuEmpleados() {
     int opcion;
-    
     do {
-        cout << endl << "=== MENU PRINCIPAL ===" << endl;
-        cout << "1. Llenar datos del cliente" << endl;
-        cout << "2. Mostrar datos del cliente actual (y guardar)" << endl;
-        cout << "3. Mostrar todos los clientes registrados" << endl;
-        cout << "4. Eliminar cliente por CI" << endl;
-        cout << "5. Llenar datos del empleado" << endl;
-        cout << "6. Mostrar datos del empleado (y guardar)" << endl;
-        cout << "7. Mostrar todos los empleados registrados" << endl;
-        cout << "8. Eliminar empleado por CI" << endl;
-        cout << "9. Reporte de más ventas\n";
-        cout << "10. Reporte empleado que más vende\n";
-        cout << "0. Salir" << endl;
+        cout << endl << "=== MENU DE GESTION DE EMPLEADOS ===" << endl;
+        cout << "1. Registrar nuevo empleado" << endl;
+        cout << "2. Mostrar todos los empleados (solo activos)" << endl;
+        cout << "3. Buscar empleado por CI" << endl;
+        cout << "4. Modificar empleado por CI" << endl;
+        cout << "5. Eliminar empleado por CI (eliminacion logica)" << endl;
+        cout << "6. Reporte: Empleado que mas vende" << endl;
+        cout << "0. Volver al menu principal" << endl;
         cout << "Seleccione una opcion: ";
         cin >> opcion;
         cin.ignore();
-
-        switch (opcion) {
-        case 1:
-            llenarDatosCliente(c);
-            break;
-        case 2:
-            mostrarDatosCliente(c);
-            break;
-        case 3:
-            mostrarTodosClientes();
-            break;
-        case 4:
-            eliminarCliente();
-            break;
-        case 5:
-            llenarDatosEmpleado(e);
-            break;
-        case 6:
-            mostrarDatosEmpleado(e);
-            break;
-        case 7:
-            mostrarTodosEmpleados();
-            break;
-        case 8:
-            eliminarEmpleado();
-            break;
-        case 9:
-            reporteEmpleadoMasVende();
-            break;
-        case 10:
-            reporteMesMasVentas();
-            break;
-        case 0:
-            cout << "Saliendo del programa..." << endl;
-            break;
-        default:
-            cout << "Opcion no valida. Intente de nuevo." << endl;
-            break;
+        
+        switch(opcion) {
+            case 1:
+                llenarDatosEmpleado();
+                break;
+            case 2:
+                mostrarTodosEmpleados();
+                break;
+            case 3:
+                buscarEmpleadoPorCI();
+                break;
+            case 4:
+                modificarEmpleado();
+                break;
+            case 5:
+                eliminarEmpleado();
+                break;
+            case 6:
+                reporteEmpleadoMasVende();
+                break;
+            case 0:
+                cout << "Volviendo al menu principal..." << endl;
+                break;
+            default:
+                cout << "Opcion no valida. Intente de nuevo." << endl;
         }
     } while (opcion != 0);
 }
 
+
+
+// ------------------------------------------------ PRODUCTOS -----------------------------------------------------------------------------------
 
 void categoriasProductoMenu() {
     cout << "\tCATEGORÍAS\n";
@@ -798,7 +1129,7 @@ void menuABM_Productos(string nombreArchivoBin) {
     } while (opcion!=0);
 }
 
-// -------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------- REPARACIONES ----------------------------------------------------------------------------------
 
 
 Fecha encontrarFechaFactura (string nombreArchivoFacturas, int numeroFacturaBuscado) {
@@ -1310,7 +1641,7 @@ void menuABM_Reparacion(string nombreArchivoBin, string nombreArchivoFactura, st
 }
 
 
-// ============================== FUNCIONES REPORTES ==============================
+// ============= Reporte Ventas ==============================
 
 void reporte_ventas_cliente(string nombre_archivo_ventas)
 {
@@ -1456,7 +1787,7 @@ void reporte_temporada_alta(string nombre_archivo_ventas)
 
 
 
-// ============================== FUNCIONES VENTA ==============================
+// ======================================================== VENTAS ==============================================================================
 
 
 bool buscar_producto(int codigo, DatosProducto &producto_encontrado, string nombre_archivo)
@@ -2275,4 +2606,3 @@ void menu_principal(string nombre_archivo_ventas, string nombre_archivo_facturas
 
     } while (opcion != 0);
 }
-

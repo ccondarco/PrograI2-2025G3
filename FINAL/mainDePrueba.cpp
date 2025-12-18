@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #include "libreriaDePrueba.h"
 using namespace std;
 
@@ -6,28 +7,45 @@ int main() {
     system("chcp 65001");
     system("cls");
     
-    string archivoProducto = "Productos_02.bin";
+    // Nombres de los archivos .bin ^w^)r
+    string nombreArchivoClientes = "";
+    string nombreArchivoEmpleados = "";
+    string nombreArchivoProductos = "Productos_02.bin";
+    string nombreArchivoVentas = "";
+    string nombreArchivoFacturas = "";
+    string nombreArchivoReparaciones = "Reparaciones_02.bin";
+
     vector<string> metodos_pago = {"Efectivo", "Tarjeta", "QR"};
     int opcion;
     do {
         system("cls");
-        cout << "MAIN MENU\n";
-        cout << "1.PRODUCTOS\n";
-        cout << "2.FACTURAS Y VENTAS\n";
-        cout << "3.C LIENTES Y EMPLEADOS\n";
-        cout << "0. SALIR\n";
+        cout << "=== MENÚ PRINCIPAL ===\n";
+        cout << "\t1. CLIENTES\n";
+        cout << "\t2. EMPLEADOS\n";
+        cout << "\t3. PRODUCTOS\n";
+        cout << "\t4. VENTAS Y FACTURAS\n";
+        cout << "\t5. REPARACIONES\n";
+        cout << "\t0. SALIR\n";
         cout << "-->";
         cin >> opcion;
         if (opcion==1) {
-            menuABM_Productos(archivoProducto);
+            menuClientes();
         } else if (opcion==2){
-            menu_principal("Ventas", "Fact", archivoProducto, metodos_pago);
+            menuEmpleados();
         } else if(opcion==3) {
-            Menu();
-        }else if (opcion==0) {
+            menuABM_Productos(nombreArchivoClientes);
+        } else if(opcion==4) {
+            menu_principal(nombreArchivoVentas, nombreArchivoFacturas, nombreArchivoProductos, metodos_pago);
+        } else if(opcion==5) {
+            menuABM_Reparacion(nombreArchivoReparaciones, nombreArchivoFacturas, nombreArchivoClientes, nombreArchivoProductos);
+        } else if (opcion==0) {
             cout << "Saliendo...";
+        } else {
+            cout << "Opción no válida\n";
+            system("pause");
         }
     } while (opcion!=0);
     
     return 0;
+
 }
