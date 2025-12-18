@@ -1899,13 +1899,41 @@ void adicionar_venta(string nombre_archivo_ventas, string nombre_archivo_product
     system("pause");
 }
 
-void modificar_venta(string nombre_archivo_ventas)
+bool obtener_producto_para_modificar_venta(int codigoBuscado, DatosProducto &producto_encontrado, string nombre_archivo_productos)
+{
+    ifstream archivo_productos;
+    DatosProducto producto;
+    bool encontrado = false;
+
+    archivo_productos.open(nombre_archivo_productos, ios::binary);
+    if (!archivo_productos.good())
+    {
+        return false;
+    }
+
+    while (archivo_productos.read((char*)(&producto), sizeof(DatosProducto)) && !encontrado)
+    {
+        if (producto.codigo == codigoBuscado && !producto.eliminado)
+        {
+            producto_encontrado = producto;
+            encontrado = true;
+        }
+    }
+
+    archivo_productos.close();
+    return encontrado;
+}
+
+void modificar_venta(string nombre_archivo_ventas, string nombre_archivo_productos)
 {
     ventaProducto venta;
     fstream archivo_ventas;
     char CI_a_buscar[10];
     int codigo_a_buscar;
     bool venta_modificada = false;
+    int opcion;
+    DatosProducto nuevo_producto;
+    int nuevo_codigo;
 
     cout << "Ingresar CI del cliente: ";
     cin.ignore();
@@ -1930,15 +1958,53 @@ void modificar_venta(string nombre_archivo_ventas)
 
             archivo_ventas.seekp(-sizeof(ventaProducto), ios::cur);
 
-            cout << "Nueva cantidad: ";
-            cin >> venta.cantidad;
+            cout << "¿Qué se desea modificar?" << endl;
+            cout << "1. Cantidad" << endl;
+            cout << "2. Producto nuevo" << endl;
+            cout << endl;
+            cout << "Seleccionar opción: ";
+            cin >> opcion;
 
-            archivo_ventas.write((char*)&venta, sizeof(ventaProducto));
+            switch (opcion)
+            {
+                case 1:
+                    cout << "Nueva cantidad: ";
+                    cin >> venta.cantidad;
+                    break;
 
-            venta_modificada = true;
-            cout << "Venta modificada correctamente." << endl;
+                case 2:
+                {
+                    cout << "Ingresar nuevo código de producto: ";
+                    cin >> nuevo_codigo;
+
+                    if (!obtener_producto_para_modificar_venta(nuevo_codigo, nuevo_producto, nombre_archivo_productos))
+                    {
+                        cout << "Producto no encontrado. La venta no se modificará." << endl;
+                        system("pause");
+                        break;
+                    }
+
+                    venta.codigoProducto = nuevo_producto.codigo;
+                    venta.precioUnitario = nuevo_producto.precioVenta;
+
+                    cout << "Producto actualizado a: " << nuevo_producto.modelo << " con precio unitario: " << venta.precioUnitario << endl;
+                    break;
+                }
+
+                default:
+                    cout << "Opción inválida. No se realizaron cambios." << endl;
+                    break;
+            }
+
+            if (opcion == 1 || (opcion == 2 && obtener_producto_para_modificar_venta(nuevo_codigo, nuevo_producto, nombre_archivo_productos)))
+            {
+                archivo_ventas.write((char*)&venta, sizeof(ventaProducto));
+                venta_modificada = true;
+                cout << "Venta modificada correctamente." << endl;
+            }
         }
     }
+    
     if (!venta_modificada)
     {
         cout << "La venta no fue encontrada o ya fue facturada." << endl;
@@ -2517,7 +2583,7 @@ void menu_facturacion(string nombre_archivo_ventas, string nombre_archivo_factur
                 break;
 
             case 2:
-                modificar_venta(nombre_archivo_ventas);
+                modificar_venta(nombre_archivo_ventas, nombre_archivo_productos);
                 break;
 
             case 3:
@@ -2591,4 +2657,5 @@ void menu_principal(string nombre_archivo_ventas, string nombre_archivo_facturas
         }
 
     } while (opcion != 0);
+
 }
