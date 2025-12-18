@@ -885,11 +885,43 @@ void categoriasProductoMenu() {
     cout << "\t\t9. Refrigerador\n";
 }
 
-DatosProducto insertarDatosProducto() {
+bool validarCodigoProducto (int codigoBuscado, string nombreArchivoProductos) {
+    ifstream archivoProductos;
     DatosProducto producto;
+    bool encontrado = false;
 
-    cout << "Código: ";
-    cin >> producto.codigo;
+    archivoProductos.open(nombreArchivoProductos, ios::binary);
+    if (archivoProductos.good()) {
+        while (archivoProductos.read((char*)(&producto), sizeof(DatosProducto)) && encontrado==false) {
+            if (codigoBuscado==producto.codigo && producto.eliminado==false) {
+                encontrado = true;
+            }
+        }
+        archivoProductos.close();
+        if (encontrado==false) {
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+            cout << "No se pudo abrir el archivo de productos.\n";
+    }
+}
+
+DatosProducto insertarDatosProducto(string nombreArchivo) {
+    DatosProducto producto;
+    int codigoTemporal;
+    bool codigoValido = true;
+
+    while (codigoValido) {
+        cout << "Código: ";
+        cin >> codigoTemporal;
+        codigoValido = validarCodigoProducto(codigoTemporal, nombreArchivo);
+        if (codigoValido) {
+            cout << "El código ya existe.\n";
+        }
+    }
+    producto.codigo = codigoTemporal;
     cin.ignore();
     cout << "Modelo: ";
     cin.getline(producto.modelo, 30);
@@ -908,11 +940,11 @@ DatosProducto insertarDatosProducto() {
 
 void agregarProducto (string nombreArchivo) {
     ofstream archivo;
-    DatosProducto producto = insertarDatosProducto();
+    DatosProducto producto = insertarDatosProducto(nombreArchivo);
     archivo.open(nombreArchivo, ios::binary | ios::app); // se añaden datos al archivo
     if (archivo.good()) {
         archivo.write((char*)(&producto), sizeof(DatosProducto));
-        cout << "Producto añadido con exito\n";
+        cout << "Producto añadido con éxito\n";
     } else {
         cout << "Error al añadir producto\n";
         system("pause");
@@ -956,6 +988,7 @@ void ModificarProducto(string nombreArchivo) {
     int codigoBuscado; 
     bool encontrado = false;
     char confirmacion;
+    int opcion;
 
     system("cls");
     cout << "Ingrese el código del producto a modificar: ";
@@ -966,7 +999,7 @@ void ModificarProducto(string nombreArchivo) {
     if (archivo.good()) {
         // Buscar el producto
         while (archivo.read((char*)(&producto), sizeof(DatosProducto))) {
-            if (codigoBuscado==producto.codigo && encontrado==false) {
+            if (codigoBuscado==producto.codigo && encontrado==false && producto.eliminado==false) {
                 cout << "=== PRODUCTO A MODIFICAR ===\n";
                 cout << "\tCódigo: " << producto.codigo << endl;
                 cout << "\tModelo: " << producto.modelo << endl;
@@ -978,20 +1011,51 @@ void ModificarProducto(string nombreArchivo) {
                 cout << "¿Desea modificar este producto? (s/n): ";
                 cin >> confirmacion;
                 if (confirmacion == 's') {
+                    do {
+                        cout << endl << "¿Qué dato desea modificar?" << endl;
+                        cout << "1. Modelo " << endl;
+                        cout << "2. Categoría" << endl;
+                        cout << "3. Precio de Venta" << endl;
+                        cout << "4. Stock" << endl;
+                        cout << "5. Salir de Modificar Producto" << endl;
+                        cout << "--> ";
+                        cin >> opcion;
+                        cin.ignore();
+                
+                        switch(opcion) {
+                            case 1:
+                                cout << "Nuevo nombre(modelo): ";
+                                cin.getline(producto.modelo, 30);
+                                cout << "Nombre(modelo) actualizado correctamente." << endl;
+                                break;
+                            case 2:
+                                cout << "Nueva categoría: ";
+                                categoriasProductoMenu();
+                                cin >> producto.categoria;
+                                producto.categoria-=1;
+                                cout << "Categoría actualizado correctamente." << endl;
+                                break;
+                            case 3:
+                                cout << "Nuevo precio de venta:" << endl;
+                                cin >> producto.precioVenta;
+                                cin.ignore();
+                                cout << "Precio de venta actualizado correctamente." << endl;
+                                break;
+                            case 4:
+                                cout << "Nuevo stock: " << endl;
+                                cin >> producto.stock;
+                                break;
+                            case 5:
+                                cout << "Saliendo de la modificación..." << endl;
+                                break;
+                            default:
+                                cout << "Opcion no válida. Intente de nuevo." << endl;
+                        }
+                
+                    } while (opcion != 5);
                     archivo.seekp(-sizeof(DatosProducto), ios::cur);
-                    cin.ignore();
-                    cout << "NUEVOS DATOS DEL PRODUCTO\n";
-                    cout << "Modelo: ";
-                    cin.getline(producto.modelo, 30);
-                    cout << "Categoría: ";
-                    categoriasProductoMenu();
-                    cin >> producto.categoria;
-                    producto.categoria-=1;
-                    cout << "Precio de venta: ";
-                    cin >> producto.precioVenta;
-                    cout << "Stock: ";
-                    cin >> producto.stock;
                     archivo.write((char*)(&producto), sizeof(DatosProducto));
+
                 } else {
                     archivo.close();
                     return;
@@ -1100,12 +1164,14 @@ void buscarProductoPorCodigo(string nombreArchivo) {
 void productosBajoStock(string nombreArchivo) {
     ifstream archivo;
     DatosProducto producto;
+    bool unBajoStock=false;
 
     archivo.open(nombreArchivo, ios::binary);
     if (archivo.good()) {
         cout << "====== PRODUCTOS DE BAJO STOCK ======\n";
         while (archivo.read((char*)(&producto), sizeof(DatosProducto))) {
-            if (producto.stock<5) {
+            if (producto.stock<5 && producto.eliminado==false) {
+                unBajoStock = true;
                 cout << "Código: " << producto.codigo << endl;
                 cout << "Modelo: " << producto.modelo << endl;
                 cout << "Categoría: " << producto.categoria << endl;
@@ -1113,6 +1179,10 @@ void productosBajoStock(string nombreArchivo) {
                 cout << "Stock: " << producto.stock << endl;
                 cout << "=========================\n";
             }
+        }
+
+        if (unBajoStock==false) {
+            cout << "No hay productos con un stock menor a 5.\n";
         }
         system("pause");
         archivo.close();
